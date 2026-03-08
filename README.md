@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ai-skills
 收集和构建高质量的skills，让AI更好地为你服务。用好AI可以事半功倍，不用AI落后时代。
 =======
@@ -259,4 +258,3 @@ MIT License © 2024 AI Skills Knowledge Base
 - [按难度分类](./SKILLS_BY_DIFFICULTY.md)
 - [按学习路径](./SKILLS_ROADMAP.md)
 - [常见问题FAQ](./FAQ.md)
->>>>>>> 9e15449 (init project)
