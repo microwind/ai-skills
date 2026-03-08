@@ -15,12 +15,12 @@
 
 - ✅ **后端开发** - RESTful API、数据库、认证授权
 - ✅ **前端开发** - React、Vue、性能优化
-- ✅ **框架生态** - Django、FastAPI、Spring Boot、Express等
+- ✅ **框架生态** - Flask、Django、FastAPI、Spring Boot、Express、NestJS、Gin、Fiber等
 - ✅ **云原生** - Docker、Kubernetes、微服务
 - ✅ **系统设计** - 高并发、分布式、缓存策略
 - ✅ **DevOps** - CI/CD、监控、日志
 - ✅ **代码质量** - 测试、重构、优化
-- ✅ **编程语言** - Python、JavaScript、Go、Rust
+- ✅ **编程语言** - Java、Python、TypeScript、JavaScript、Go、Rust、C、C++
 
 ## 🎯 快速开始
 

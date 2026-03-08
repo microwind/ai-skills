@@ -232,3 +232,68 @@ A: Use query parameters: `GET /api/v1/users?name=john&email=john@example.com`
 - [JSON:API Specification](https://jsonapi.org/)
 - [HTTP Status Codes](https://httpwg.org/specs/rfc9110.html#status.codes)
 - [OpenAPI/Swagger Documentation](https://swagger.io/)
+
+---
+
+## 中文说明
+
+### 目的
+学习设计和实现高质量的RESTful API，遵循REST原则和最佳实践。
+
+### 核心概念
+
+#### REST基本原则
+1. **资源导向** - 将API端点设计为资源而非动作
+2. **HTTP方法合理使用** - GET/POST/PUT/DELETE/PATCH
+3. **状态码规范** - 使用标准HTTP状态码
+4. **版本管理** - API版本控制策略
+5. **分页与过滤** - 大数据集处理
+
+### 实现示例
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class User(BaseModel):
+    id: int
+    name: str
+    email: str
+
+@app.get("/api/v1/users/{user_id}")
+async def get_user(user_id: int):
+    return {"id": user_id, "name": "John"}
+
+@app.post("/api/v1/users")
+async def create_user(user: User):
+    return user
+
+@app.put("/api/v1/users/{user_id}")
+async def update_user(user_id: int, user: User):
+    return user
+
+@app.delete("/api/v1/users/{user_id}")
+async def delete_user(user_id: int):
+    return {"deleted": user_id}
+```
+
+### 最佳实践
+
+1. **资源命名** - 使用名词，避免使用动词
+2. **HTTP方法** - 合理使用GET、POST、PUT、DELETE、PATCH
+3. **状态码** - 2xx成功、4xx客户端错误、5xx服务器错误
+4. **版本控制** - 在URL中包含版本号（如/api/v1/）
+5. **错误处理** - 统一的错误响应格式
+
+### 常见问题
+
+**Q: 应该使用PUT还是PATCH？**
+A: PUT用于完全替换资源，PATCH用于部分更新。
+
+**Q: 如何处理复杂的业务逻辑？**
+A: 不要反映业务逻辑在URL中，而是通过资源状态变化表示。
+
+**Q: 如何设计子资源？**
+A: 使用 `/api/v1/users/{userId}/posts` 表示用户的文章列表。
