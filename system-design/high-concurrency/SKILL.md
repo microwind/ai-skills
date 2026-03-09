@@ -1,12 +1,12 @@
 # 高并发系统设计
 
 ## Purpose
-Learn 高并发系统设计 with practical examples and best practices.
+Learn 高并发系统设计 with practical 示例 and 最佳实践.
 
-## Use Cases
-- Use case 1
-- Use case 2
-- Use case 3
+## 使用 Cases
+- 使用 case 1
+- 使用 case 2
+- 使用 case 3
 
 ## Prerequisites
 - Basic programming knowledge
@@ -17,7 +17,7 @@ Learn 高并发系统设计 with practical examples and best practices.
 2. Step 2
 3. Step 3
 
-## Key Code Examples
+## Key 代码 示例
 ```python
 # Example code
 pass
@@ -27,6 +27,6 @@ pass
 Q: Common question?
 A: Answer here.
 
-## Resources
-- [Resource Name](https://example.com)
-- [Documentation](https://docs.example.com)
+## 资源
+- [资源 Name](https://示例.com)
+- [Documentation](https://docs.示例.com)

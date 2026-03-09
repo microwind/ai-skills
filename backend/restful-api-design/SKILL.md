@@ -1,37 +1,37 @@
-# RESTful API Design and Implementation
+# RESTful API 设计 and Implementation
 
 ## Purpose
-Master the design and implementation of high-quality RESTful APIs following REST principles and best practices.
+Master the 设计 and implementation of high-quality RESTful APIs following REST principles and 最佳实践.
 
-## Use Cases
+## 使用 Cases
 - Building scalable web APIs
 - Designing microservices communication
 - Creating mobile-friendly backends
 - Public API development
-- Third-party integration
+- Third-party 集成
 
 ## Prerequisites
 - Understanding of HTTP protocol
 - Basic knowledge of API concepts
-- Experience with at least one backend framework
+- Experience with at least one backend 框架
 
 ## Core Steps
 
 1. **Understand REST Principles**
-   - Resources (nouns, not verbs)
+   - 资源 (nouns, not verbs)
    - HTTP methods (GET, POST, PUT, DELETE, PATCH)
    - Stateless communication
-   - Standard status codes
+   - Standard 状态码
 
-2. **Design Resource Models**
-   - Identify entities in your domain
+2. **设计 资源 Models**
+   - 识别 entities in your domain
    - Map entities to URLs
-   - Define relationships between resources
+   - Define relationships between 资源
 
 3. **Choose Versioning Strategy**
    - URL path versioning (`/api/v1/`)
-   - Header versioning
-   - Accept header versioning
+   - 头部 versioning
+   - Accept 头部 versioning
 
 4. **Implement CRUD Operations**
    - Create (POST)
@@ -39,19 +39,19 @@ Master the design and implementation of high-quality RESTful APIs following REST
    - Update (PUT/PATCH)
    - Delete (DELETE)
 
-5. **Handle Errors Properly**
-   - Consistent error response format
-   - Appropriate HTTP status codes
-   - Descriptive error messages
+5. **Handle 错误 Properly**
+   - Consistent 错误 响应 format
+   - Appropriate HTTP 状态码
+   - Descriptive 错误 messages
 
-6. **Implement Pagination & Filtering**
-   - Query parameters for filtering
-   - Limit/offset or cursor-based pagination
+6. **Implement 分页 & Filtering**
+   - 查询 parameters for filtering
+   - Limit/offset or cursor-based 分页
    - Sorting capabilities
 
-## Key Code Examples
+## Key 代码 示例
 
-### Python Flask Example
+### Python Flask 示例
 ```python
 from flask import Flask, request, jsonify
 from datetime import datetime
@@ -149,7 +149,7 @@ def delete_user(user_id):
     return create_response({'deleted': deleted_user})
 ```
 
-### FastAPI Example (Python)
+### 快速的API 示例 (Python)
 ```python
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
@@ -215,20 +215,20 @@ def delete_user(user_id: int):
 
 ## FAQ
 
-**Q: Should I use PUT or PATCH for updates?**
-A: Use PUT for complete replacement, PATCH for partial updates. In practice, PATCH is more flexible and commonly used.
+**Q: Should I 使用 PUT or PATCH for updates?**
+A: 使用 PUT for complete replacement, PATCH for partial updates. In practice, PATCH is more flexible and commonly used.
 
 **Q: How do I handle API versioning?**
-A: URL path versioning (`/api/v1/`) is most explicit and recommended. Avoid forcing version upgrades on clients.
+A: URL path versioning (`/api/v1/`) is most explicit and recommended. Avoid forcing 版本 upgrades on 客户端.
 
-**Q: Should sub-resources be nested in URLs?**
-A: Yes, for related resources: `GET /api/v1/users/{userId}/posts`. Limit to 2 levels deep.
+**Q: Should sub-资源 be nested in URLs?**
+A: Yes, for related 资源: `GET /api/v1/users/{userId}/posts`. Limit to 2 levels deep.
 
 **Q: How do I handle filtering and search?**
-A: Use query parameters: `GET /api/v1/users?name=john&email=john@example.com`
+A: 使用 查询 parameters: `GET /api/v1/users?name=john&email=john@示例.com`
 
-## Resources
-- [REST API Best Practices](https://restfulapi.net/)
+## 资源
+- [REST API 最佳实践](https://restfulapi.net/)
 - [JSON:API Specification](https://jsonapi.org/)
 - [HTTP Status Codes](https://httpwg.org/specs/rfc9110.html#status.codes)
 - [OpenAPI/Swagger Documentation](https://swagger.io/)
