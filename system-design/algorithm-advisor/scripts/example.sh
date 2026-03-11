@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# 算法顾问 (Algorithm Advisor) 使用示例
+
+echo "=== 算法顾问 (Algorithm Advisor) 示例 ==="
+echo ""
+
+# 示例 1: 推荐系统设计
+echo "📋 示例 1: 设计电商个性化推荐系统"
+echo "=========================================="
+echo "任务: 为电商平台设计个性化推荐系统"
+echo "上下文:"
+echo "  - 100 万商品"
+echo "  - 1000 万用户"
+echo "  - 平均 100ms 响应时间"
+echo "  - 日均 1 亿次推荐请求"
+echo ""
+echo "约束条件:"
+echo "  - 推荐准确率 > 80%"
+echo "  - 多样性推荐（覆盖多个品类）"
+echo "  - 支持冷启动用户"
+echo ""
+echo "💡 建议:"
+echo "  推荐方案: 混合模型 (Hybrid Model)"
+echo "  - 离线计算: 协同过滤 (Collaborative Filtering)"
+echo "  - 在线排序: 内容相似度 + 用户偏好 + 多样性"
+echo "  - 缓存策略: 热点推荐预缓存"
+echo ""
+
+# 示例 2: 搜索系统
+echo ""
+echo "📋 示例 2: 优化商品搜索性能"
+echo "=========================================="
+echo "任务: 在 100 万商品中快速搜索"
+echo "约束条件: <100ms 响应时间"
+echo ""
+echo "💡 建议:"
+echo "  方案: 倒排索引 (ElasticSearch/Lucene)"
+echo "  - 性能: <100ms（支持复杂查询）"
+echo "  - 准确性: 支持模糊匹配、同义词扩展"
+echo "  - 可扩展性: 支持分片和副本"
+echo ""
+
+# 示例 3: 缓存策略
+echo ""
+echo "📋 示例 3: 选择缓存策略"
+echo "=========================================="
+echo "任务: 降低数据库压力，加快热点数据访问"
+echo "约束条件:"
+echo "  - 工作集大小: 20GB"
+echo "  - 可用内存: 32GB"
+echo "  - 访问模式: 80/20 分布"
+echo ""
+echo "💡 建议:"
+echo "  方案: LRU 缓存 + Redis"
+echo "  - LRU 成本: O(1) 访问"
+echo "  - Redis: 分布式缓存，可扩展"
+echo "  - 预期效果: DB 查询减少 80%"
+echo ""
+
+echo "📖 更多详情请查看 SKILL.md"
