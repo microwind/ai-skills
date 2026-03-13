@@ -35,7 +35,7 @@ ai-skills/
 ├── frameworks/           # 框架与库 (6+ skills)
 ├── cloud-native/         # 云原生 (5+ skills)
 ├── microservices/        # 微服务 (5+ skills)
-├── system-design/        # 系统设计 (5+ skills)
+├── system-design/        # 系统设计 (7+ skills)
 ├── database/             # 数据库 (4+ skills)
 ├── devops/               # DevOps (4+ skills)
 ├── code-quality/         # 代码质量 (4+ skills)
@@ -113,6 +113,8 @@ ls scripts/
 - [网络策略配置](./cloud-native/networking-policies/) - 容器网络
 
 ### 系统设计
+- [算法顾问](./system-design/algorithm-advisor/) - 复杂系统算法选择与优化
+- [架构分析器](./system-design/architecture-analyzer/) - 系统架构分析与改进
 - [高并发系统设计](./system-design/high-concurrency/) - 支持高并发
 - [分布式一致性](./system-design/distributed-consistency/) - 分布式事务
 - [CAP定理应用](./system-design/cap-theorem/) - 系统权衡
@@ -179,7 +181,7 @@ ls scripts/
 ├── 框架: 6+
 ├── 云原生: 5+
 ├── 微服务: 5+
-├── 系统设计: 5+
+├── 系统设计: 7+
 ├── 数据库: 4+
 ├── DevOps: 4+
 ├── 代码质量: 4+
@@ -229,9 +231,14 @@ ls scripts/
 **A:** 答案
 ```
 
-## 📝 License
+## 快速导航
 
-MIT License © 2024 AI Skills Knowledge Base
+- [完整Skills索引](./SKILLS_INDEX.md)
+- [按难度分类](./SKILLS_BY_DIFFICULTY.md)
+- [按学习路径](./SKILLS_ROADMAP.md)
+- [常见问题FAQ](./FAQ.md)
+
+---
 
 ## 🙏 致谢
 
@@ -242,19 +249,8 @@ MIT License © 2024 AI Skills Knowledge Base
 
 ## 📞 联系与反馈
 
-- 📧 提交Issues报告问题或建议
-- 💬 讨论区进行技术讨论
+**我是Jarry 李春平** **祝您学习愉快！** 🚀
+- 📧 mail: lichunping@buaa.edu.cn
+- 💬 weixin: springbuild
 - 🌟 给个Star支持本项目
 
----
-
-**祝您学习愉快！** 🚀
-
----
-
-## 快速导航
-
-- [完整Skills索引](./SKILLS_INDEX.md)
-- [按难度分类](./SKILLS_BY_DIFFICULTY.md)
-- [按学习路径](./SKILLS_ROADMAP.md)
-- [常见问题FAQ](./FAQ.md)

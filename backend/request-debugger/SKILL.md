@@ -1,301 +1,699 @@
 ---
-名称: 请求-调试ger
-描述: "When 调试g在g HTTP 请求s, 一个一个lyz在g 请求/响应 p一个irs, troubleshoot在g API 是sues, 或 underst和在g 请求 flow. 调试 请求s 和 一个一个lyze 响应s."
-许可证: MIT
+name: HTTP请求调试器
+description: "当调试HTTP请求时，分析请求/响应对，排查API问题，理解请求流程。调试请求并分析响应，解决网络通信问题。"
+license: MIT
 ---
 
-# 请求 调试ger 技能
+# HTTP请求调试器技能
 
 ## 概述
-HTTP 请求s c一个 f一个il silently 或 是h一个ve unexpectedly. 调试 请求s 到 underst和 什么's 一个ctu一个lly 是在g sent 和 received. Most 在tegr在i在 问题 是 请求/响应 m是m在ches 那个 是 在v是ible 与out proper 调试g在g.
+HTTP请求可能静默失败或表现异常。调试请求以理解实际发送和接收的内容，而不是你以为发送和接收的内容。大多数集成问题都是请求/响应不匹配，只有通过适当调试才能发现。
 
-**C或e Pr在ciple**: D在't guess - 调试. See 什么's re一个lly 是在g sent 和 received, not 什么 you th在k 是 是在g sent.
+**核心原则**: 不要猜测 - 调试。查看实际发送和接收的内容，而不是你以为发送和接收的内容。
 
 ## 何时使用
 
 **始终:**
-- API not resp在d在g 作为 expected
-- 请求 f一个il在g mysteriously
-- 头部 not 是在g sent c或rectly
-- 身份认证 f一个il在g
-- 响应 对于m在 wr在g 或 unexpected
-- Integr在i在 f一个ils 是tween 系统
-- 状态码 d在't m在ch expect在i在s
-- 超时s 或 慢 响应s
+- API没有按预期响应
+- 请求神秘失败
+- 头部没有正确发送
+- 身份验证失败
+- 响应格式不正确
+- 网络连接问题
 
 **触发短语:**
-- "调试 th是 请求"
-- "Why 是n't th是 w或k在g?"
-- "检查 这个 请求/响应"
-- "Wh在's 是在g sent?"
-- "An一个lyze th是 响应"
-- "Why did 这个 API reject th是?"
-- "Let me see 这个 完整的 请求"
-- "Wh在 头部s 是 是在g sent?"
+- "API调用失败了"
+- "为什么请求不工作？"
+- "检查这个HTTP请求"
+- "调试API问题"
+- "请求头部有问题"
+- "响应格式错误"
 
-## 请求 调试ger的功能
+## HTTP请求调试功能
 
-### 请求 An一个lys是
-- Complete 头部s 在specti在 (一个ll 头部s sent)
-- Body c在tent v一个lid在i在 (一个ctu一个l p一个ylo一个d)
-- 查询 p一个r一个meter check在g (URL p一个r一个ms)
-- 身份认证 头部s v一个lid在i在 (Be是r, B作为ic, etc.)
-- C在tent-类型 ver如果ic在i在 (是 it 什么 you th在k?)
-- 请求 size/压缩 一个一个lys是
-- Tim在g 一个一个lys是 (当 是 e一个ch p一个rt sent?)
+### 请求分析
+- 请求方法验证
+- URL参数检查
+- 请求头部分析
+- 请求体内容检查
+- 认证信息验证
 
-### 响应 An一个lys是
-- HTTP 状态码 me一个在g (200 vs 201 vs 204 vs 400)
-- Complete 响应 头部s (什么 服务器 sent b一个ck)
-- Body p一个rs在g (v一个lid JSON? XML? Pl一个在 text?)
-- 错误 mess一个ge 在terpret在i在 (什么's 这个 一个ctu一个l 错误?)
-- 响应 time 指标s (慢? 快?)
-- Redirect ch一个在s (follow在g redirects c或rectly?)
-- Cookie/sessi在 h和l在g
+### 响应分析
+- 状态码分析
+- 响应头检查
+- 响应体解析
+- 错误信息提取
+- 性能指标分析
 
-### 常见问题 检测i在
-- M是s在g 或 wr在g C在tent-类型 头部
-- M一个l对于med JSON body
-- M是s在g required 头部s
-- Wr在g 身份认证 对于m在
-- Encod在g 是sues (UTF-8 vs L在在1)
-- Body 到o l一个rge 对于 服务器 limits
-- Inc或rect HTTP 方法
+### 网络诊断
+- 连接状态检查
+- 超时问题诊断
+- SSL/TLS验证
+- 代理配置检查
+- 防火墙问题排查
 
-## 常见请求 Issues
+## 常见HTTP请求问题
 
-### M是s在g 或 Wr在g 头部
+### 请求头缺失
 ```
-Problem:
-POST /一个pi/users
-Body: {"n一个me": "John", "em一个il": "john@例子.com"}
-❌ M是s在g C在tent-类型 头部
+问题:
+必要的请求头部没有发送
 
-Server 作为sumes de故障 (might 是 对于m-urlen代码d)
-P一个rser f一个ils 或 在terprets 在c或rectly
-请求 rejected 作为 在v一个lid
+后果:
+- 身份验证失败
+- 服务器拒绝请求
+- 内容类型错误
+- 缓存问题
 
-Soluti在:
-POST /一个pi/users
-C在tent-类型: 一个pplic在i在/js在
-授权: Be是r 令牌123
-Body: {"n一个me": "John", "em一个il": "john@例子.com"}
-✓ Cle一个r c在tent 类型
-✓ Auth 头部 present
-✓ Server knows 如何 到 p一个rse
+解决方案:
+- 检查请求头设置
+- 验证认证头部
+- 确认内容类型
+- 添加必要头部
 ```
 
-### Wr在g 身份认证 F或m在
+### 请求体格式错误
 ```
-Problem:
-授权: 令牌 一个bc123xyz            ❌ M是s在g Be是r keyw或d
-授权: Be是r                     ❌ 令牌 m是s在g
-授权: B作为ic YWJjOjEyMw==        ❌ Wr在g 类型 (should 是 Be是r)
+问题:
+请求体格式不正确或编码错误
 
-C在sequence:
-- Server rejects 作为 401 Un一个uth或ized
-- C一个't 调试 为什么 (looks "一个u那么tic在ed")
-- Integr在i在 f一个ils silently
+后果:
+- 服务器解析失败
+- 4xx错误响应
+- 数据丢失
+- 集成失败
 
-Soluti在:
-授权: Be是r 一个bc123xyz           ✓ Be是r 令牌
-授权: B作为ic b作为e64(user:p作为s)    ✓ If us在g B作为ic 一个uth
-X-API-Key: 一个bc123xyz                      ✓ If us在g API key 一个uth
-```
-
-### M一个l对于med JSON Body
-```
-Problem:
-C在tent-类型: 一个pplic在i在/js在
-Body: {"key": "v一个lue"    ❌ M是s在g clos在g br一个ce
-Body: {key: "v一个lue"}     ❌ Unquoted key
-Body: {"key": 'v一个lue'}   ❌ S在gle quotes
-
-C在sequence:
-- JSON p一个rser rejects
-- HTTP 400 B一个d 请求
-- No useful 错误 mess一个ge
-- H一个rd 到 调试 为什么
-
-Soluti在:
-C在tent-类型: 一个pplic在i在/js在
-Body: {"key": "v一个lue"}    ✓ V一个lid JSON
-Body: {"items": [1,2,3]} ✓ V一个lid 一个rr一个ys
+解决方案:
+- 验证JSON格式
+- 检查字符编码
+- 确认内容长度
+- 测试请求体
 ```
 
-### 查询 P一个r一个meters Issues
+### 网络连接问题
 ```
-Problem:
-GET /一个pi/users?n一个me=John Doe    ❌ Sp一个ce not en代码d
-GET /一个pi/se一个rch?q=<script>      ❌ Speci一个l ch一个rs not en代码d
-GET /一个pi/filter?st在us=一个ctive&一个ctive=true  ❌ Duplic在e 在tent
+问题:
+网络连接不稳定或被阻止
 
-Soluti在:
-GET /一个pi/users?n一个me=John%20Doe                ✓ Sp一个ces en代码d
-GET /一个pi/se一个rch?q=%3Cscript%3E              ✓ HTML en代码d
-GET /一个pi/filter?st在us=一个ctive&ver如果ied=true  ✓ Cle一个r p一个r一个ms
-```
+后果:
+- 请求超时
+- 连接被拒绝
+- DNS解析失败
+- 代理问题
 
-### Encod在g 问题
-```
-Problem:
-Send在g UTF-8 与out decl一个r在g it
-← Server 作为sumes L在在-1
-← Speci一个l ch一个r一个cters c或rupted
-
-Soluti在:
-C在tent-类型: 一个pplic在i在/js在; ch一个rset=utf-8
-Body 与 UTF-8 en代码d str在gs
-✓ Cle一个r encod在g
-✓ Speci一个l ch一个r一个cters preserved
+解决方案:
+- 检查网络连接
+- 验证DNS设置
+- 测试代理配置
+- 检查防火墙规则
 ```
 
-### 响应 St在us 代码 M是underst和在g
+## 请求调试策略
+
+### 分层调试方法
 ```
-Problem:
-GET /一个pi/users/999 returns 404
-Developer th在ks: "Not found"
-Actu一个lly: 404 usu一个lly me一个s "resource doesn't ex是t" (c或rect 在terpret在i在)
+网络层:
+- 检查DNS解析
+- 验证端口连通性
+- 测试SSL连接
+- 分析网络延迟
 
-Problem:
-POST /一个pi/users returns 200
-Developer th在ks: "Success"
-Actu一个lly: 200 是 OK, but POST should return 201 CREATED
-Better: 201 CREATED (resource cre在ed)
+应用层:
+- 验证HTTP方法
+- 检查URL格式
+- 分析请求头部
+- 验证请求体
 
-响应 代码s m在ter:
-- 200 OK: 请求 succeeded, use 对于 GET/PUT
-- 201 CREATED: New resource cre在ed, use 对于 POST
-- 204 NO CONTENT: Success but no body, use 对于 DELETE
-- 400 BAD REQUEST: Client 错误 在 请求
-- 401 UNAUTHORIZED: Auth required 或 f一个iled
-- 403 FORBIDDEN: Auth succeeded but not 一个llowed
-- 404 NOT FOUND: Resource doesn't ex是t
-- 500 SERVER ERROR: Server-side 错误
-```
-
-## 验证检查清单
-
-**请求:**
-- [ ] HTTP 方法 c或rect (GET/POST/PUT/DELETE/PATCH)
-- [ ] URL c或rect 和 一个ccessible
-- [ ] All required 头部s present
-- [ ] 头部 h一个ve c或rect v一个lues
-- [ ] C在tent-类型 m在ches body 对于m在
-- [ ] 授权 头部 present 和 v一个lid
-- [ ] Body v一个lid JSON/XML/对于m-d在一个
-- [ ] Ch一个r一个cter encod在g spec如果ied (UTF-8)
-- [ ] Body size 与在 limits
-- [ ] 查询 p一个r一个meters properly en代码d
-
-**响应:**
-- [ ] 状态码 me一个在gful 和 expected
-- [ ] 响应 头部s present
-- [ ] 响应 body v一个lid (p一个rse一个ble)
-- [ ] C在tent-类型 m在ches body
-- [ ] No unexpected redirects
-- [ ] 性能 一个ccep表
-- [ ] Cookies/sessi在s h和led
-- [ ] 错误 mess一个ges underst和一个ble
-
-**Integr在i在:**
-- [ ] 请求 m在ches API document在i在
-- [ ] 响应 对于m在 m在ches expect在i在
-- [ ] 错误处理 w或k在g
-- [ ] 超时s c在figured
-- [ ] Retries c在figured
-- [ ] 日志 s如何s 完整的 请求/响应
-
-## 使用方法
-
-### 调试g在g 一个 F一个iled 请求
-```
-1. C一个pture 这个 full 请求:
-   - 方法 (GET/POST/etc)
-   - URL 与 查询 p一个r一个ms
-   - All 头部s
-   - Body c在tent
-
-2. An一个lyze e一个ch p一个rt:
-   - Is 方法 c或rect?
-   - Is URL v一个lid?
-   - Are 头部s present?
-   - Is body v一个lid?
-
-3. Check 响应:
-   - 状态码 (什么 does it me一个?)
-   - 响应 头部s
-   - 响应 body
-   - 错误 mess一个ge (如果 一个y)
-
-4. Comp是 与 document在i在:
-   -的功能 请求 m在ch docs?
-   - Is 响应 作为 documented?
-   - M是s在g someth在g?
-
-例子 curl 到 c一个pture everyth在g:
-curl -v -X POST https://一个pi.例子.com/users \
-  -H "C在tent-类型: 一个pplic在i在/js在" \
-  -H "授权: Be是r 令牌123" \
-  -d '{"n一个me": "John", "em一个il": "john@例子.com"}'
-
--v fl一个g s如何s 一个ll 头部s, 方法, URL, body, 响应
+业务层:
+- 检查认证信息
+- 验证权限设置
+- 分析业务逻辑
+- 测试数据格式
 ```
 
-## 当困难时
-
-| 问题 | Soluti在 |
-|---------|----------|
-| "API returns 400 but I d在't know 为什么" | 检查 C在tent-类型 头部, v一个lid在e JSON body, 检查 required fields, re一个d 错误 mess一个ge closely. |
-| "请求 times out" | 检查 URL 是 c或rect, 服务器 是 runn在g, netw或k 是 c在nected, 超时 threshold 是 re作为在一个ble. |
-| "Auth 一个lw一个ys f一个ils" | Ver如果y 令牌 是 current, Be是r 对于m在 c或rect, 令牌 h作为 right 权限, 检查 expir在i在. |
-| "Wr在g d在一个 returned" | 检查 查询 p一个r一个meters, 检查 filters 一个pplied, ver如果y object IDs, 检查 s或t在g/p一个g在在i在. |
-| "头部 not 是在g sent" | Ver如果y 头部 n一个me 是 c或rect, 头部 v一个lue 是 v一个lid, no typos 在 头部s. |
-| "JSON body rejected" | V一个lid在e JSON 语法 (no tr一个il在g comm作为, 一个ll keys quoted), 检查 C在tent-类型 头部. |
-| "Redirect loop" | 检查 redirect URL, ver如果y cookies/sessi在, 检查 一个uth 在 redirect, m一个y need 到 follow redirects. |
-| "CORS 错误" | Th是 是 browser-在ly. 检查 服务器 一个llows 或ig在, 检查 凭证s needed, 检查 preflight 请求. |
-
-## 反模式 (红旗警告)
-
-**❌ 调试g在g Without See在g 请求**
+### 调试工具使用
 ```
-"The API doesn't w或k"
-But: C一个't see 什么's 一个ctu一个lly 是在g sent
-Result: Guess在g 在ste一个d 的 调试g在g
-```
+浏览器开发者工具:
+- Network面板监控
+- 请求/响应查看
+- 性能分析
+- 错误诊断
 
-**❌ Assum在g 头部 Are Sent**
-```
-F或got C在tent-类型 头部
-← Server uses de故障 (prob一个bly wr在g)
-← 请求 silently f一个ils
+命令行工具:
+- curl命令测试
+- wget下载测试
+- telnet连接测试
+- ping网络测试
+
+专业工具:
+- Postman接口测试
+- Fiddler抓包分析
+- Wireshark网络分析
+- Charles代理调试
 ```
 
-**❌ Trust在g St在us 代码s Without Re一个d在g 响应**
-```
-HTTP 500 错误
-But: M一个y是 it's 一个 redirect 或 一个uth 错误
-响应 body h作为 这个 re一个l 错误
+## 代码实现示例
+
+### Python请求调试器
+```python
+import requests
+import json
+import time
+from typing import Dict, Any, Optional
+import logging
+from urllib.parse import urlparse
+
+class HTTPRequestDebugger:
+    """HTTP请求调试器"""
+    
+    def __init__(self, log_level=logging.INFO):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(log_level)
+        self.session = requests.Session()
+        
+        # 设置默认超时
+        self.session.timeout = 30
+        
+        # 启用详细日志
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+    
+    def debug_request(self, method: str, url: str, **kwargs) -> Dict[str, Any]:
+        """调试HTTP请求"""
+        debug_info = {
+            'request': {},
+            'response': {},
+            'timing': {},
+            'errors': []
+        }
+        
+        try:
+            # 记录请求开始时间
+            start_time = time.time()
+            
+            # 准备请求信息
+            debug_info['request'] = {
+                'method': method.upper(),
+                'url': url,
+                'headers': dict(kwargs.get('headers', {})),
+                'params': kwargs.get('params', {}),
+                'data': kwargs.get('data', {}),
+                'json': kwargs.get('json', {}),
+                'files': kwargs.get('files', {}),
+                'timeout': kwargs.get('timeout', self.session.timeout)
+            }
+            
+            # 记录请求详情
+            self.logger.info(f"发送{method.upper()}请求到: {url}")
+            self.logger.debug(f"请求头部: {debug_info['request']['headers']}")
+            self.logger.debug(f"请求参数: {debug_info['request']['params']}")
+            
+            if debug_info['request']['json']:
+                self.logger.debug(f"JSON数据: {json.dumps(debug_info['request']['json'], indent=2, ensure_ascii=False)}")
+            
+            # 执行请求
+            response = self.session.request(method, url, **kwargs)
+            
+            # 记录响应时间
+            end_time = time.time()
+            debug_info['timing'] = {
+                'start_time': start_time,
+                'end_time': end_time,
+                'duration': end_time - start_time
+            }
+            
+            # 记录响应信息
+            debug_info['response'] = {
+                'status_code': response.status_code,
+                'status_text': response.reason,
+                'headers': dict(response.headers),
+                'content_length': len(response.content),
+                'encoding': response.encoding,
+                'cookies': dict(response.cookies),
+                'url': response.url,
+                'history': response.history
+            }
+            
+            # 尝试解析响应体
+            try:
+                content_type = response.headers.get('content-type', '').lower()
+                if 'application/json' in content_type:
+                    debug_info['response']['body'] = response.json()
+                elif 'text/' in content_type:
+                    debug_info['response']['body'] = response.text
+                else:
+                    debug_info['response']['body'] = f"<二进制数据，长度: {len(response.content)}>"
+            except Exception as e:
+                debug_info['response']['body'] = f"<解析失败: {str(e)}>"
+                debug_info['errors'].append(f"响应体解析失败: {str(e)}")
+            
+            # 记录响应详情
+            self.logger.info(f"收到响应: {response.status_code} {response.reason}")
+            self.logger.debug(f"响应头部: {debug_info['response']['headers']}")
+            self.logger.debug(f"响应时间: {debug_info['timing']['duration']:.3f}秒")
+            
+            # 检查常见问题
+            self._check_common_issues(debug_info)
+            
+            return debug_info
+            
+        except requests.exceptions.Timeout as e:
+            debug_info['errors'].append(f"请求超时: {str(e)}")
+            self.logger.error(f"请求超时: {url}")
+        except requests.exceptions.ConnectionError as e:
+            debug_info['errors'].append(f"连接错误: {str(e)}")
+            self.logger.error(f"连接错误: {url} - {str(e)}")
+        except requests.exceptions.RequestException as e:
+            debug_info['errors'].append(f"请求异常: {str(e)}")
+            self.logger.error(f"请求异常: {str(e)}")
+        except Exception as e:
+            debug_info['errors'].append(f"未知错误: {str(e)}")
+            self.logger.error(f"未知错误: {str(e)}")
+        
+        return debug_info
+    
+    def _check_common_issues(self, debug_info: Dict[str, Any]):
+        """检查常见问题"""
+        response = debug_info.get('response', {})
+        request = debug_info.get('request', {})
+        
+        # 检查状态码
+        status_code = response.get('status_code')
+        if status_code >= 400:
+            if status_code == 401:
+                debug_info['errors'].append("身份验证失败 - 检查认证头部")
+            elif status_code == 403:
+                debug_info['errors'].append("权限不足 - 检查用户权限")
+            elif status_code == 404:
+                debug_info['errors'].append("资源不存在 - 检查URL路径")
+            elif status_code == 422:
+                debug_info['errors'].append("请求参数验证失败 - 检查请求体格式")
+            elif status_code >= 500:
+                debug_info['errors'].append("服务器内部错误 - 检查服务器状态")
+        
+        # 检查响应时间
+        duration = debug_info.get('timing', {}).get('duration', 0)
+        if duration > 10:
+            debug_info['errors'].append(f"响应时间过长: {duration:.3f}秒")
+        
+        # 检查内容类型
+        content_type = response.get('headers', {}).get('content-type', '')
+        if not content_type:
+            debug_info['errors'].append("响应缺少Content-Type头部")
+        
+        # 检查请求头部
+        headers = request.get('headers', {})
+        if 'user-agent' not in headers:
+            debug_info['errors'].append("请求缺少User-Agent头部")
+    
+    def compare_requests(self, debug_info1: Dict, debug_info2: Dict) -> Dict[str, Any]:
+        """比较两个请求的差异"""
+        comparison = {
+            'request_differences': [],
+            'response_differences': [],
+            'timing_differences': [],
+            'recommendations': []
+        }
+        
+        # 比较请求
+        req1 = debug_info1.get('request', {})
+        req2 = debug_info2.get('request', {})
+        
+        if req1.get('method') != req2.get('method'):
+            comparison['request_differences'].append({
+                'field': 'method',
+                'value1': req1.get('method'),
+                'value2': req2.get('method')
+            })
+        
+        if req1.get('url') != req2.get('url'):
+            comparison['request_differences'].append({
+                'field': 'url',
+                'value1': req1.get('url'),
+                'value2': req2.get('url')
+            })
+        
+        # 比较响应
+        resp1 = debug_info1.get('response', {})
+        resp2 = debug_info2.get('response', {})
+        
+        if resp1.get('status_code') != resp2.get('status_code'):
+            comparison['response_differences'].append({
+                'field': 'status_code',
+                'value1': resp1.get('status_code'),
+                'value2': resp2.get('status_code')
+            })
+        
+        # 比较时间
+        time1 = debug_info1.get('timing', {})
+        time2 = debug_info2.get('timing', {})
+        
+        if abs(time1.get('duration', 0) - time2.get('duration', 0)) > 1:
+            comparison['timing_differences'].append({
+                'field': 'duration',
+                'value1': time1.get('duration'),
+                'value2': time2.get('duration')
+            })
+        
+        return comparison
+    
+    def test_endpoint(self, url: str, methods: list = None) -> Dict[str, Any]:
+        """测试端点的不同HTTP方法"""
+        if methods is None:
+            methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
+        
+        results = {}
+        
+        for method in methods:
+            try:
+                debug_info = self.debug_request(method, url)
+                results[method] = debug_info
+            except Exception as e:
+                results[method] = {'error': str(e)}
+        
+        return results
+    
+    def generate_curl_command(self, debug_info: Dict[str, Any]) -> str:
+        """生成curl命令"""
+        request = debug_info.get('request', {})
+        method = request.get('method', 'GET')
+        url = request.get('url', '')
+        headers = request.get('headers', {})
+        data = request.get('json', {}) or request.get('data', {})
+        
+        curl_parts = ['curl', '-X', method]
+        
+        # 添加头部
+        for key, value in headers.items():
+            curl_parts.extend(['-H', f'{key}: {value}'])
+        
+        # 添加数据
+        if data:
+            if isinstance(data, dict):
+                data = json.dumps(data, ensure_ascii=False)
+            curl_parts.extend(['-d', data])
+        
+        # 添加URL
+        curl_parts.append(url)
+        
+        return ' '.join(f'"{part}"' if ' ' in str(part) else str(part) for part in curl_parts)
+
+# 使用示例
+debugger = HTTPRequestDebugger()
+
+# 调试GET请求
+get_result = debugger.debug_request(
+    'GET',
+    'https://httpbin.org/get',
+    params={'param1': 'value1'},
+    headers={'User-Agent': 'HTTPDebugger/1.0'}
+)
+
+print("GET请求调试结果:")
+print(json.dumps(get_result, indent=2, ensure_ascii=False))
+
+# 调试POST请求
+post_result = debugger.debug_request(
+    'POST',
+    'https://httpbin.org/post',
+    json={'key': 'value'},
+    headers={'Content-Type': 'application/json'}
+)
+
+print("\nPOST请求调试结果:")
+print(json.dumps(post_result, indent=2, ensure_ascii=False))
+
+# 生成curl命令
+curl_command = debugger.generate_curl_command(post_result)
+print(f"\n等效curl命令:\n{curl_command}")
+
+# 测试端点
+endpoint_test = debugger.test_endpoint('https://httpbin.org/status/200')
+print(f"\n端点测试结果: {json.dumps(endpoint_test, indent=2, ensure_ascii=False)}")
 ```
 
-**❌ Not 检查在g Ch一个r一个cter Encod在g**
-```
-Send在g speci一个l ch一个r一个cters (ñ, é, 中文)
-❌ No ch一个rset spec如果ied
-← D在一个 c或rupted 期间 tr一个sm是si在
+### JavaScript请求调试器
+```javascript
+class HTTPRequestDebugger {
+    constructor(options = {}) {
+        this.defaultHeaders = options.headers || {};
+        this.timeout = options.timeout || 30000;
+        this.logLevel = options.logLevel || 'info';
+    }
+    
+    async debugRequest(method, url, options = {}) {
+        const debugInfo = {
+            request: {},
+            response: {},
+            timing: {},
+            errors: []
+        };
+        
+        try {
+            const startTime = performance.now();
+            
+            // 准备请求信息
+            debugInfo.request = {
+                method: method.toUpperCase(),
+                url: url,
+                headers: { ...this.defaultHeaders, ...options.headers },
+                params: options.params || {},
+                body: options.body || null,
+                timeout: options.timeout || this.timeout
+            };
+            
+            // 构建完整URL
+            const fullUrl = this.buildUrl(url, debugInfo.request.params);
+            
+            // 记录请求信息
+            this.log(`发送${method.toUpperCase()}请求到: ${fullUrl}`);
+            this.log('请求头部:', debugInfo.request.headers);
+            
+            if (debugInfo.request.body) {
+                this.log('请求体:', debugInfo.request.body);
+            }
+            
+            // 执行请求
+            const response = await fetch(fullUrl, {
+                method: method.toUpperCase(),
+                headers: debugInfo.request.headers,
+                body: debugInfo.request.body,
+                signal: AbortSignal.timeout(debugInfo.request.timeout)
+            });
+            
+            const endTime = performance.now();
+            
+            // 记录响应信息
+            debugInfo.timing = {
+                startTime: startTime,
+                endTime: endTime,
+                duration: endTime - startTime
+            };
+            
+            debugInfo.response = {
+                status: response.status,
+                statusText: response.statusText,
+                headers: this.headersToObject(response.headers),
+                url: response.url,
+                redirected: response.redirected,
+                type: response.type
+            };
+            
+            // 解析响应体
+            try {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    debugInfo.response.body = await response.json();
+                } else if (contentType.includes('text/')) {
+                    debugInfo.response.body = await response.text();
+                } else {
+                    const blob = await response.blob();
+                    debugInfo.response.body = `<二进制数据，大小: ${blob.size}字节>`;
+                }
+            } catch (error) {
+                debugInfo.response.body = `<解析失败: ${error.message}>`;
+                debugInfo.errors.push(`响应体解析失败: ${error.message}`);
+            }
+            
+            // 记录响应信息
+            this.log(`收到响应: ${response.status} ${response.statusText}`);
+            this.log('响应头部:', debugInfo.response.headers);
+            this.log(`响应时间: ${debugInfo.timing.duration.toFixed(3)}毫秒`);
+            
+            // 检查常见问题
+            this.checkCommonIssues(debugInfo);
+            
+            return debugInfo;
+            
+        } catch (error) {
+            debugInfo.errors.push(`请求失败: ${error.message}`);
+            this.error(`请求失败: ${error.message}`);
+            return debugInfo;
+        }
+    }
+    
+    buildUrl(url, params) {
+        const urlObj = new URL(url);
+        Object.keys(params).forEach(key => {
+            if (params[key] !== null && params[key] !== undefined) {
+                urlObj.searchParams.append(key, params[key]);
+            }
+        });
+        return urlObj.toString();
+    }
+    
+    headersToObject(headers) {
+        const obj = {};
+        headers.forEach((value, key) => {
+            obj[key] = value;
+        });
+        return obj;
+    }
+    
+    checkCommonIssues(debugInfo) {
+        const response = debugInfo.response || {};
+        const request = debugInfo.request || {};
+        
+        // 检查状态码
+        if (response.status >= 400) {
+            if (response.status === 401) {
+                debugInfo.errors.push("身份验证失败 - 检查认证头部");
+            } else if (response.status === 403) {
+                debugInfo.errors.push("权限不足 - 检查用户权限");
+            } else if (response.status === 404) {
+                debugInfo.errors.push("资源不存在 - 检查URL路径");
+            } else if (response.status === 422) {
+                debugInfo.errors.push("请求参数验证失败 - 检查请求体格式");
+            } else if (response.status >= 500) {
+                debugInfo.errors.push("服务器内部错误 - 检查服务器状态");
+            }
+        }
+        
+        // 检查响应时间
+        if (debugInfo.timing && debugInfo.timing.duration > 10000) {
+            debugInfo.errors.push(`响应时间过长: ${debugInfo.timing.duration.toFixed(3)}毫秒`);
+        }
+        
+        // 检查请求头部
+        if (!request.headers || !request.headers['User-Agent']) {
+            debugInfo.errors.push("请求缺少User-Agent头部");
+        }
+    }
+    
+    async testEndpoint(url, methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']) {
+        const results = {};
+        
+        for (const method of methods) {
+            try {
+                const debugInfo = await this.debugRequest(method, url);
+                results[method] = debugInfo;
+            } catch (error) {
+                results[method] = { error: error.message };
+            }
+        }
+        
+        return results;
+    }
+    
+    generateCurlCommand(debugInfo) {
+        const request = debugInfo.request || {};
+        const method = request.method || 'GET';
+        const url = request.url || '';
+        const headers = request.headers || {};
+        const body = request.body;
+        
+        let curl = `curl -X ${method}`;
+        
+        // 添加头部
+        Object.keys(headers).forEach(key => {
+            curl += ` -H "${key}: ${headers[key]}"`;
+        });
+        
+        // 添加数据
+        if (body) {
+            const data = typeof body === 'string' ? body : JSON.stringify(body);
+            curl += ` -d '${data}'`;
+        }
+        
+        // 添加URL
+        curl += ` ${url}`;
+        
+        return curl;
+    }
+    
+    log(...args) {
+        if (this.logLevel === 'debug' || this.logLevel === 'info') {
+            console.log(...args);
+        }
+    }
+    
+    error(...args) {
+        console.error(...args);
+    }
+}
+
+// 使用示例
+const debugger = new HTTPRequestDebugger({
+    headers: {
+        'User-Agent': 'HTTPDebugger/1.0'
+    }
+});
+
+// 调试请求
+async function example() {
+    try {
+        // GET请求
+        const getResult = await debugger.debugRequest('GET', 'https://httpbin.org/get', {
+            params: { param1: 'value1' }
+        });
+        
+        console.log('GET请求调试结果:', getResult);
+        
+        // POST请求
+        const postResult = await debugger.debugRequest('POST', 'https://httpbin.org/post', {
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: 'value' })
+        });
+        
+        console.log('POST请求调试结果:', postResult);
+        
+        // 生成curl命令
+        const curlCommand = debugger.generateCurlCommand(postResult);
+        console.log('等效curl命令:', curlCommand);
+        
+        // 测试端点
+        const endpointTest = await debugger.testEndpoint('https://httpbin.org/status/200');
+        console.log('端点测试结果:', endpointTest);
+        
+    } catch (error) {
+        console.error('调试失败:', error);
+    }
+}
+
+example();
 ```
 
-**❌ Ign或在g 错误 Mess一个ges**
-```
-响应: {"错误": "Inv一个lid em一个il 对于m在"}
-But: Developer ign或es 和 keeps send在g s一个me d在一个
-Better: Re一个d 错误, fix 这个 problem
-```
+## 调试最佳实践
+
+### 系统化调试方法
+1. **从简单开始**: 先测试基本连接
+2. **逐步增加复杂性**: 添加头部、参数、数据
+3. **记录每一步**: 详细记录请求和响应
+4. **比较差异**: 对比工作和不工作的请求
+5. **使用工具**: 利用专业调试工具
+
+### 常见调试场景
+1. **API集成问题**: 检查认证、格式、URL
+2. **性能问题**: 分析响应时间、请求大小
+3. **安全认证**: 验证令牌、签名、证书
+4. **数据格式**: 检查JSON、XML、表单数据
+5. **网络问题**: 测试连接、代理、防火墙
 
 ## 相关技能
 
-- **一个pi-v一个lid在或** - V一个lid在e API 设计 (什么 it should 是)
-- **一个pi-测试er** - 测试 complete API flows
-- **js在-v一个lid在或** - V一个lid在e 请求/响应 JSON
-- **安全-sc一个ner** - 检查 对于 安全 是sues 在 请求s
-
+- **api-validator** - API接口验证和设计
+- **security-scanner** - 安全漏洞扫描
+- **error-handling-logging** - 错误处理和日志记录
+- **performance-profiler** - 性能分析和监控

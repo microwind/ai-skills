@@ -57,11 +57,12 @@
 | 熔断器 | 故障隔离 | ⭐⭐⭐ | [查看](./microservices/circuit-breaker/) |
 | API网关 | 网关设计 | ⭐⭐⭐ | [查看](./microservices/api-gateway/) |
 
-## 🏗️ 系统设计 (6+ Skills)
+## 🏗️ 系统设计 (7+ Skills)
 
 | Skill | 描述 | 难度 | 链接 |
 |-------|------|------|------|
 | 算法顾问 | 算法选择和优化方案 | ⭐⭐⭐ | [查看](./system-design/algorithm-advisor/) |
+| 架构分析器 | 系统架构分析与改进 | ⭐⭐⭐ | [查看](./system-design/architecture-analyzer/) |
 | 高并发设计 | 支持高并发系统 | ⭐⭐⭐⭐ | [查看](./system-design/high-concurrency/) |
 | 分布式一致性 | 分布式事务 | ⭐⭐⭐⭐ | [查看](./system-design/distributed-consistency/) |
 | CAP定理 | 系统权衡 | ⭐⭐⭐ | [查看](./system-design/cap-theorem/) |

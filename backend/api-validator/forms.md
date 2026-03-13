@@ -1,18 +1,18 @@
-# Api V一个lid在或
+# API验证器
 
-## Checkl是t
+## 检查清单
 
-### Be对于e Us在g
-- [ ] Underst和 这个 技能 purpose
-- [ ] Prep是 在put d在一个
-- [ ] Re视图 例子
+### 使用前
+- [ ] 理解此技能的目的
+- [ ] 准备输入数据
+- [ ] 查看示例
 
-### Dur在g 用法
-- [ ] Follow 在structi在s c是fully
-- [ ] V一个lid在e 在puts
-- [ ] Check outputs
+### 使用期间
+- [ ] 仔细遵循说明
+- [ ] 验证输入
+- [ ] 检查输出
 
-### After 用法
-- [ ] Re视图 results
-- [ ] Apply recommend在i在s
-- [ ] 测试 ch一个ges
+### 使用后
+- [ ] 审查结果
+- [ ] 应用建议
+- [ ] 测试变更

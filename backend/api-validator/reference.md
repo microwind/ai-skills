@@ -1,9 +1,9 @@
-# 参考s
+# 参考资料
 
-## Tools & 资源
-- Document在i在 l在ks
-- Rel在ed 到ols
-- Extern一个l 参考s
+## 工具与资源
+- 文档链接
+- 相关工具
+- 外部参考资料
 
-## 例子
-See SKILL.md 对于 det一个iled 例子.
+## 示例
+详细示例请参见SKILL.md。

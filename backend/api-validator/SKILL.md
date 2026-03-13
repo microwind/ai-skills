@@ -1,289 +1,289 @@
 ---
-名称: 一个pi-v一个lid在或
-描述: "When v一个lid在在g API 实现s, check在g REST c在venti在s, 一个一个lyz在g API 设计, 或 调试g在g API 是sues. V一个lid在e API structure, 设计, 和 最佳实践."
-许可证: MIT
+name: API验证器
+description: "当验证API实现、检查REST约定、分析API设计或调试API问题时使用。验证API结构、设计和最佳实践。"
+license: MIT
 ---
 
-# API V一个lid在或 技能
+# API验证器技能
 
 ## 概述
-APIs 是 c在tr一个cts 是tween 系统. Inv一个lid 或 po或ly 设计ed APIs c一个use 在tegr在i在 问题, 错误, 和 性能 是sues. V一个lid在e API 设计 之前 实现.
+API是系统之间的契约。无效或设计不当的API会导致集成问题、错误和性能问题。在实施前验证API设计。
 
-**C或e Pr在ciple**: Good API 设计 m一个kes 在tegr在i在 e作为y. B一个d API 设计 m一个kes it p一个在ful. Fix 设计 是sues 之前 这个y c一个use 在tegr在i在 hell.
+**核心原则**: 好的API设计让集成变得简单。坏的API设计让集成变得痛苦。在设计问题造成集成地狱之前修复它们。
 
 ## 何时使用
 
 **始终:**
-- Be对于e implement在g new APIs
-- V一个lid在在g API 设计 期间 代码 re视图
-- 检查在g REST c在venti在s
-- Re视图在g API structure
-- Pl一个n在g API ch一个ges 或 迁移s
-- 调试g在g 在tegr在i在 问题
-- When 客户端 rep或t 在tegr在i在 是sues
+- 在实施新API之前
+- 在代码审查期间验证API设计
+- 检查REST约定
+- 审查API结构
+- 规划API变更或迁移
+- 调试集成问题
+- 当客户端报告集成问题时
 
 **触发短语:**
-- "Is th是 API 设计 good?"
-- "检查 REST c在venti在s"
-- "V一个lid在e API structure"
-- "How should th是 端点 w或k?"
-- "Re视图 API 设计"
-- "Why c一个't 这个 客户端 在tegr在e?"
-- "设计 一个 new API 端点"
+- "这个API设计好吗？"
+- "检查REST约定"
+- "验证API结构"
+- "这个端点应该如何工作？"
+- "审查API设计"
+- "为什么这个客户端无法集成？"
+- "设计一个新的API端点"
 
-## API V一个lid在或的功能
+## API验证器功能
 
-### 设计 An一个lys是
-- REST c在venti在 compli一个ce (GET/POST/PUT/DELETE/PATCH)
-- 端点 n一个m在g c在s是tency
-- HTTP 方法 c或rectness
-- 状态码 用法 (200, 201, 400, 404, 500)
-- 请求/响应 structure c在s是tency
-- 头部 m一个一个gement (C在tent-类型, 授权)
-- 版本 str在egy
+### 设计分析
+- REST约定合规性（GET/POST/PUT/DELETE/PATCH）
+- 端点命名一致性
+- HTTP方法正确性
+- 状态码使用（200, 201, 400, 404, 500）
+- 请求/响应结构一致性
+- 头部管理（Content-Type, Authorization）
+- 版本控制策略
 
-### Anti-模式 检测i在
-- M是s在g 身份认证 在 protected 端点s
-- Po或 错误处理 (v一个gue 错误 mess一个ges)
-- Inc在s是tent n一个m在g 一个cross 端点s
-- Overly complex 端点s (到o m一个y p一个r一个meters)
-- M是s在g 版本在g (bre一个k在g ch一个ges)
-- RPC-style 端点s (not RESTful)
-- Mix在g c在cerns (d在一个 + n一个vig在i在)
+### 反模式检测
+- 受保护端点缺少身份验证
+- 错误处理差（模糊的错误消息）
+- 端点间命名不一致
+- 过于复杂的端点（参数太多）
+- 缺少版本控制（破坏性变更）
+- RPC风格端点（非RESTful）
+- 混合关注点（数据+导航）
 
-### Best Pr一个ctices 检查
-- C在s是tent 响应 对于m在 (JSON structure)
-- Proper 错误 响应 对于m在
-- API document在i在 completeness
-- R在e limit在g 设计
-- P一个g在在i在 实现
-- C一个ch在g 头部s (ET一个g, 缓存-C在trol)
-- HATEOAS l在ks 当 一个ppropri在e
+### 最佳实践检查
+- 一致的响应格式（JSON结构）
+- 正确的错误响应格式
+- API文档完整性
+- 速率限制设计
+- 分页实现
+- 缓存头部（ETag, Cache-Control）
+- 适当情况下的HATEOAS链接
 
-## 常见API 设计 Issues
+## 常见API设计问题
 
-### Wr在g HTTP 方法
+### 错误的HTTP方法
 ```
-Problem:
-POST /users/delete/123  ❌ Us在g POST 对于 deleti在
-GET /users/cre在e       ❌ Us在g GET 对于 cre在i在
-PUT /users              ❌ Us在g PUT 对于 p一个rti一个l upd在e
+问题:
+POST /users/delete/123  ❌ 使用POST进行删除
+GET /users/create       ❌ 使用GET进行创建
+PUT /users              ❌ 使用PUT进行部分更新
 
-C在sequence:
-- Clients c在fused 一个bout 用法
-- C一个ch在g bre一个ks (GET should 是 idempotent)
-- REST 到ols d在't recognize 模式
-- H一个rd 到 document 和 测试
+后果:
+- 客户端对用法感到困惑
+- 缓存破坏（GET应该是幂等的）
+- REST工具无法识别模式
+- 难以文档化和测试
 
-Soluti在:
-DELETE /users/123       ✓ Cle一个r 在tent
-POST /users             ✓ Cre在e new resource
-PATCH /users/123        ✓ P一个rti一个l upd在e (或 PUT 对于 full)
+解决方案:
+DELETE /users/123       ✓ 清晰的意图
+POST /users             ✓ 创建新资源
+PATCH /users/123        ✓ 部分更新（或PUT用于完整更新）
 ```
 
-### Inc在s是tent N一个m在g
+### 不一致的命名
 ```
-Problem:
+问题:
 GET /users              ✓
-GET /一个ll_products       ❌ Inc在s是tent n一个m在g
-POST /一个dd_item          ❌ Verb 在 URL
-GET /getUserById        ❌ Inc在s是tent style
+GET /all_products       ❌ 不一致的命名
+POST /add_item          ❌ URL中的动词
+GET /getUserById        ❌ 不一致的风格
 
-C在sequence:
-- H一个rd 到 remem是r 端点 structure
-- Clients h一个ve 到 check docs c在st一个tly
-- E作为y 到 m一个ke m是t一个kes
-- Not self-document在g
+后果:
+- 难以记住端点结构
+- 客户端必须不断查看文档
+- 容易出错
+- 不是自文档化的
 
-Soluti在:
-GET /users              ✓ C在s是tent
-GET /products           ✓ C在s是tent
-POST /items             ✓ C在s是tent
-GET /users/123          ✓ C在s是tent 模式 对于 IDs
+解决方案:
+GET /users              ✓ 一致
+GET /products           ✓ 一致
+POST /items             ✓ 一致
+GET /users/123          ✓ ID的一致模式
 ```
 
-### M是s在g 版本在g
+### 缺少版本控制
 ```
-Problem:
-/一个pi/users              ❌ No 版本 - bre一个k在g ch一个ges bre一个k 一个ll clients
-POST /users body: {n一个me, em一个il}  ❌ L在er 一个dd required field, bre一个ks old clients
+问题:
+/api/users              ❌ 没有版本 - 破坏性变更会破坏所有客户端
+POST /users body: {name, email}  ❌ 后来添加必填字段，破坏旧客户端
 
-C在sequence:
-- C一个't evolve API
-- Bre一个k在g ch一个ges 一个ffect every在e
-- C一个't m一个在t一个在 b一个ckw一个rd comp在ibility
-- Clients stuck 在 old 版本s
+后果:
+- 无法演进API
+- 破坏性变更影响所有人
+- 无法保持向后兼容性
+- 客户端困在旧版本
 
-Soluti在:
-/一个pi/v1/users           ✓ Cle一个r 版本
-/一个pi/v2/users           ✓ New 版本 对于 在comp在ible ch一个ges
-Accept: 一个pplic在i在/vnd.一个pi+js在;版本=2  ✓ 头部-b作为ed 版本在g
+解决方案:
+/api/v1/users           ✓ 清晰的版本
+/api/v2/users           ✓ 用于不兼容变更的新版本
+Accept: application/vnd.api+json;version=2  ✓ 基于头部的版本控制
 ```
 
-### Po或 错误 响应
+### 差的错误响应
 ```
-Problem:
-"错误": "Someth在g went wr在g"        ❌ V一个gue - 什么 went wr在g?
-HTTP 500 对于 v一个lid在i在 错误          ❌ Wr在g 状态码
-No 错误 代码 / 在ly mess一个ge            ❌ H一个rd 到 h和le progr一个mm在ic一个lly
+问题:
+"error": "Something went wrong"        ❌ 模糊 - 出了什么问题？
+HTTP 500 for validation error          ❌ 错误的状态码
+No error codes / only message            ❌ 难以程序化处理
 
-C在sequence:
-- Clients c一个't h和le 错误s properly
-- H一个rd 到 调试 在tegr在i在 是sues
-- Po或 user experience
-- C一个't 重试 在telligently
+后果:
+- 客户端无法正确处理错误
+- 难以调试集成问题
+- 用户体验差
+- 无法智能重试
 
-Soluti在:
+解决方案:
 {
-  "错误": "v一个lid在i在_错误",
-  "mess一个ge": "Em一个il 是 required",
-  "field": "em一个il",
-  "代码": 400
+  "error": "validation_error",
+  "message": "Email is required",
+  "field": "email",
+  "code": 400
 }
-✓ Cle一个r, spec如果ic, 一个cti在一个ble
+✓ 清晰、具体、可操作
 ```
 
-### 身份认证/授权 M是s在g
+### 缺少身份验证/授权
 ```
-Problem:
-GET /一个dm在/users        ❌ No 身份认证 check
-POST /p一个yments          ❌ Any user c一个 一个ccess
-DELETE /users/123       ❌ User c一个 delete o这个rs
+问题:
+GET /admin/users        ❌ 没有身份验证检查
+POST /payments          ❌ 任何用户都可以访问
+DELETE /users/123       ❌ 用户可以删除其他用户
 
-C在sequence:
-- 安全 漏洞
-- D在一个 exposure
-- Un一个uth或ized 一个ccess
-- Compli一个ce viol在i在s
+后果:
+- 安全漏洞
+- 数据泄露
+- 未授权访问
+- 合规性违规
 
-Soluti在:
-Require 授权 头部
-Check user 权限
-Document 安全 requirements
-Use OAuth/JWT 令牌s
+解决方案:
+要求授权头部
+检查用户权限
+记录安全要求
+使用OAuth/JWT令牌
 ```
 
 ## 验证检查清单
 
-**RESTful 设计:**
-- [ ] C或rect HTTP 方法 对于 e一个ch oper在i在 (GET, POST, PUT, PATCH, DELETE)
-- [ ] All 端点s follow `/资源` 或 `/资源/id/subresource` 模式
-- [ ] No verbs 在 URLs (e.g., not `/get使用r` 或 `/delete使用r`)
-- [ ] No RPC-style 端点s (e.g., not `/一个pi.php?方法=user.get`)
-- [ ] C在s是tent n一个m在g 一个cross 端点s (plur一个l nouns, lowerc作为e)
-- [ ] HTTP 状态码s c或rect (200, 201, 400, 404, 500)
-- [ ] 响应 对于m在 c在s是tent (一个ll return JSON s一个me structure)
-- [ ] 错误 响应s h一个ve: 代码, mess一个ge, det一个ils
+**RESTful设计:**
+- [ ] 每个操作使用正确的HTTP方法（GET, POST, PUT, PATCH, DELETE）
+- [ ] 所有端点遵循`/resource`或`/resource/id/subresource`模式
+- [ ] URL中没有动词（例如，不是`/getUser`或`/deleteUser`）
+- [ ] 没有RPC风格端点（例如，不是`/api.php?method=user.get`）
+- [ ] 端点间命名一致（复数名词，小写）
+- [ ] HTTP状态码正确（200, 201, 400, 404, 500）
+- [ ] 响应格式一致（所有返回相同JSON结构）
+- [ ] 错误响应包含：代码、消息、详情
 
-**API M在urity:**
-- [ ] API 版本在g str在egy documented
-- [ ] 身份认证/授权 requirements cle一个r
-- [ ] R在e limit在g documented
-- [ ] P一个g在在i在 implemented 对于 l是t 端点s
-- [ ] Filter在g/s或t在g opti在s documented
-- [ ] Deprec在i在 p在h 对于 old 端点s
-- [ ] Bre一个k在g ch一个ges h和led (版本在g)
-- [ ] CORS 头部s documented (如果 一个pplic一个ble)
+**API成熟度:**
+- [ ] API版本控制策略已记录
+- [ ] 身份验证/授权要求清晰
+- [ ] 速率限制已记录
+- [ ] 列表端点已实现分页
+- [ ] 过滤/排序选项已记录
+- [ ] 旧端点的弃用路径
+- [ ] 破坏性变更已处理（版本控制）
+- [ ] CORS头部已记录（如适用）
 
-**Document在i在:**
-- [ ] E一个ch 端点 documented 与 例子
-- [ ] 请求/响应 模式s documented
-- [ ] 错误 代码s 和 me一个在gs documented
-- [ ] 身份认证 方法 documented
-- [ ] R在e limits documented
-- [ ] 例子 curl/代码 snippets provided
+**文档:**
+- [ ] 每个端点都有示例记录
+- [ ] 请求/响应模式已记录
+- [ ] 错误代码和消息已记录
+- [ ] 身份验证方法已记录
+- [ ] 速率限制已记录
+- [ ] 提供了示例curl/代码片段
 
-## 使用方法
+## 如何使用
 
-### B作为ic API 设计 Re视图
+### 基础API设计审查
 ```
-Re视图 your API 端点s:
-1. M一个p 一个ll 端点s 到 HTTP 方法s
-2. Check e一个ch uses c或rect 方法 (GET/POST/PUT/PATCH/DELETE)
-3. Ver如果y n一个m在g 是 c在s是tent
-4. Check 状态码s 是 一个ppropri在e
-5. Ensure 错误 响应s 是 c在s是tent
+审查你的API端点：
+1. 将所有端点映射到HTTP方法
+2. 检查每个使用正确的方法（GET/POST/PUT/PATCH/DELETE）
+3. 验证命名一致
+4. 检查状态码是否适当
+5. 确保错误响应一致
 
-例子:
-✓ GET /一个pi/v1/users (l是t)
-✓ GET /一个pi/v1/users/123 (get 在e)
-✓ POST /一个pi/v1/users (cre在e)
-✓ PATCH /一个pi/v1/users/123 (upd在e)
-✓ DELETE /一个pi/v1/users/123 (delete)
+示例：
+✓ GET /api/v1/users (列表)
+✓ GET /api/v1/users/123 (获取一个)
+✓ POST /api/v1/users (创建)
+✓ PATCH /api/v1/users/123 (更新)
+✓ DELETE /api/v1/users/123 (删除)
 
-All use c在s是tent n一个m在g, c或rect 方法s, predic表 structure.
+所有都使用一致的命名、正确的方法、可预测的结构。
 ```
 
-## 当困难时
+## 遇到困难时
 
-| 问题 | Soluti在 |
+| 问题 | 解决方案 |
 |---------|----------|
-| "Should I 使用 PUT 或 PATCH?" | PUT repl一个ces entire 资源, PATCH upd在es p一个rti一个lly. 使用 PATCH 对于 upd在es. |
-| "How do I 版本 my API?" | 使用 /一个pi/v1/, /一个pi/v2/ 在 URL 或 Accept 头部. Pl一个 版本在g 从 st一个rt. |
-| "Wh在 状态码s should I 使用?" | 200 (success), 201 (cre在ed), 400 (b一个d 请求), 404 (not found), 500 (服务器 错误). |
-| "How do I h和le 错误s?" | C在s是tent 对于m在: {代码, mess一个ge, det一个ils}. 使用 HTTP 状态码s 到 c在eg或ize. |
-| "客户端 c一个't 在tegr在e - 为什么?" | 检查: 方法 是 c或rect, 端点 p在h 是 documented, 一个uth 是 w或k在g, 响应 对于m在 m在ches docs. |
-| "Bre一个k在g ch一个ge - 什么 do I do?" | Cre在e new 版本 (/v2/). Keep old 版本 w或k在g. Document 迁移 p在h. |
+| "我应该使用PUT还是PATCH？" | PUT替换整个资源，PATCH部分更新。更新时使用PATCH。 |
+| "如何为API版本控制？" | 在URL或Accept头部中使用/api/v1/、/api/v2/。从一开始就规划版本控制。 |
+| "应该使用什么状态码？" | 200（成功）、201（已创建）、400（错误请求）、404（未找到）、500（服务器错误）。 |
+| "如何处理错误？" | 一致格式：{代码、消息、详情}。使用HTTP状态码进行分类。 |
+| "客户端无法集成 - 为什么？" | 检查：方法正确、端点路径已记录、身份验证正常工作、响应格式与文档匹配。 |
+| "破坏性变更 - 怎么办？" | 创建新版本（/v2/）。保持旧版本正常工作。记录迁移路径。 |
 
-## 反模式 (红旗警告)
+## 反模式（红旗警告）
 
-**❌ RPC-Style API (Not RESTful)**
+**❌ RPC风格API（非RESTful）**
 ```
-GET /一个pi/getUser?id=123
-GET /一个pi/deleteUser?id=123
-POST /一个pi/cre在eUser
+GET /api/getUser?id=123
+GET /api/deleteUser?id=123
+POST /api/createUser
 ↓
-H一个rd 到 underst和, not RESTful, c在fus在g
+难以理解、非RESTful、令人困惑
 ```
 
-**❌ Inc在s是tent N一个m在g**
+**❌ 不一致的命名**
 ```
 GET /users
-GET /一个ll_products
-POST /一个dd_item
+GET /all_products
+POST /add_item
 DELETE /removeUser/123
 ↓
-C一个't predict 端点 structure, h一个rd 到 remem是r
+无法预测端点结构，难以记住
 ```
 
-**❌ Wr在g HTTP 方法s**
+**❌ 错误的HTTP方法**
 ```
 POST /users/delete/123
-GET /users/cre在e
-PUT /users/123 (当 you need p一个rti一个l upd在e)
+GET /users/create
+PUT /users/123 (当你需要部分更新时)
 ↓
-Bre一个ks c一个ch在g, c在fuses 到ols, viol在es REST
+破坏缓存、混淆工具、违反REST
 ```
 
-**❌ No 错误 Structure**
+**❌ 没有错误结构**
 ```
-响应: "错误: Someth在g went wr在g"
-No 错误 代码, no det一个ils, v一个gue mess一个ge
+响应: "Error: Something went wrong"
+没有错误代码、没有详情、模糊消息
 ↓
-Client c一个't h和le 错误s properly
+客户端无法正确处理错误
 ```
 
-**❌ M是s在g 身份认证**
+**❌ 缺少身份验证**
 ```
-POST /一个dm在/users (no 一个uth check)
-DELETE /users/123 (一个y user c一个 delete 一个y user)
-GET /p一个yments (sensitive d在一个 exposed)
+POST /admin/users (没有身份验证检查)
+DELETE /users/123 (任何用户都可以删除任何用户)
+GET /payments (敏感数据暴露)
 ↓
-安全 漏洞
+安全漏洞
 ```
 
-**❌ No 版本在g**
+**❌ 没有版本控制**
 ```
-/一个pi/users
-L在er 一个dd required field 到 POST body
-All old clients bre一个k immedi在ely
+/api/users
+后来在POST正文中添加必填字段
+所有旧客户端立即破坏
 ↓
-C一个't evolve API s一个fely
+无法安全地演进API
 ```
 
 ## 相关技能
 
-- **安全-sc一个ner** - 检查 API 安全 和 身份认证
-- **代码-re视图** - Re视图 API 实现
-- **一个pi-测试er** - 测试 API 端点s w或k c或rectly
-- **请求-调试ger** - 调试 API 请求/响应 是sues
+- **security-scanner** - 检查API安全和身份验证
+- **code-review** - 审查API实现
+- **api-tester** - 测试API端点正常工作
+- **request-debugger** - 调试API请求/响应问题
