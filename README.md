@@ -48,10 +48,9 @@ ai-skills/
 每个Skill都有标准的目录结构：
 
 ```
+├── README.md               # 一级目录说明
 skill-name/
-├── 中文说明.md              # 中文详细说明（推荐先看）
-├── SKILL.md                # 英文标准文档
-├── README.md               # 技能概览
+├── SKILL.md                # 标准SKILL文档
 ├── scripts/                # 示例代码和脚本
 ├── references/             # 参考文档
 └── assets/                 # 模板和资源
@@ -77,7 +76,7 @@ cat 中文说明.md
 ls scripts/
 ```
 
-## 📖 主要Skills列表
+## 主要Skills列表
 
 ### 后端开发
 - [RESTful API设计与实现](./backend/restful-api-design/) - 设计高质量的Web API
@@ -132,9 +131,9 @@ ls scripts/
 - 代码质量: 代码审查、重构模式、测试策略、代码优化
 - 编程语言: Python高级特性、JavaScript ES6+、Go模式、Rust系统编程
 
-## 💡 Skill文件说明
+## Skill文件说明
 
-### 中文说明.md
+### SKILL.md
 每个Skill的主要文档，包含：
 - 📌 目的和使用场景
 - 🎓 核心概念讲解
@@ -143,25 +142,18 @@ ls scripts/
 - ❓ 常见问题解答
 - 📚 相关资源链接
 
-### SKILL.md
-符合Claude Skills标准的英文文档，包含：
-- 技能目的说明
-- 前置条件和依赖
-- 核心步骤指南
-- 代码示例和最佳实践
-
 ### 示例代码（scripts/）
-- Python、JavaScript、Go等多语言示例
+- Python、JavaScript、Go、Java等多语言示例
 - 可直接运行的代码片段
 - 最佳实践参考
 
-## 🚀 如何使用本库
+## 如何使用本库
 
 ### 1. 找到您需要的Skill
 按分类浏览，或使用搜索找到相关技能。
 
 ### 2. 阅读中文说明
-从`中文说明.md`开始了解核心内容。
+从`SKILL.md`开始了解核心内容。
 
 ### 3. 查看示例代码
 在`scripts/`目录中查看实战示例。
@@ -172,7 +164,7 @@ ls scripts/
 ### 5. 动手实践
 复制代码示例，在自己的项目中应用。
 
-## 📊 库结构统计
+## 库结构统计
 
 ```
 总Skills数: 50+
@@ -191,16 +183,6 @@ ls scripts/
 代码示例: 100+
 参考链接: 200+
 ```
-
-## 🤝 贡献指南
-
-欢迎贡献新的Skills或改进现有内容！
-
-### 贡献流程
-1. Fork本项目
-2. 创建特性分支 (`git checkout -b feature/new-skill`)
-3. 按照Skill模板创建新内容
-4. 提交PR
 
 ### Skill模板
 ```markdown
@@ -240,17 +222,24 @@ ls scripts/
 
 ---
 
-## 🙏 致谢
+## 相关链接：AI时代程序员成长体系
+- [《AI时代，人人都是Agent工程师》](https://github.com/microwind/algorithms/blob/main/start-here/AI-Era-Programmers-as-Agent-Engineers.md)
+- ai-prompt - AI编程提示词库：[https://github.com/microwind/ai-prompt](https://github.com/microwind/ai-prompt)
+- ai-skills - AI编程Skill库：[https://github.com/microwind/ai-skills](https://github.com/microwind/ai-skills)
+- algorithms - 算法思想与数据结构：[https://github.com/microwind/algorithms](https://github.com/microwind/algorithms)
+- design-patterns - 设计模式与编程范式：[https://github.com/microwind/design-patterns](https://github.com/microwind/design-patterns)
+
+## 致谢
 
 感谢以下开源项目的启发：
 - [Anthropic Skills](https://github.com/anthropics/skills)
 - [Awesome OpenClaw Skills](https://github.com/VoltAgent/awesome-openclaw-skills)
 - [OpenClaw Skills](https://github.com/openclaw/skills)
 
-## 📞 联系与反馈
+## 联系与反馈
 
-**我是Jarry 李春平** **祝您学习愉快！** 🚀
-- 📧 mail: lichunping@buaa.edu.cn
-- 💬 weixin: springbuild
+**我是Jarry 李春平** **祝您学习愉快！**
+- mail: lichunping@buaa.edu.cn
+- weixin: springbuild
 - 🌟 给个Star支持本项目
 
