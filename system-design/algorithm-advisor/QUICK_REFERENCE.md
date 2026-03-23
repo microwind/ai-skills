@@ -316,7 +316,7 @@ POST /feedback
 ├─ hybrid-recommendation-system.md   (完整实现方案, 1214行)
 ├─ scripts/
 │  └─ hybrid_recommendation.py       (可运行演示代码, 475行)
-├─ forms.md                          (使用清单)
+├─ forms.md                          (参数结构)
 └─ reference.md                      (参考资源)
 ```
 

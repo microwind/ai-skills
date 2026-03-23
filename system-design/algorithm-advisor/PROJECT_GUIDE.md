@@ -70,7 +70,7 @@ system-design/algorithm-advisor/
 │  └─ 工具和资源链接
 │
 ├─ forms.md (0.6KB)
-│  └─ 使用清单
+│  └─ 参数配置表单
 │
 └─ scripts/
    ├─ example.sh (演示脚本)

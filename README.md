@@ -1,5 +1,5 @@
 # ai-skills
-构建高质量的skills，让AI更好地替你打工。用好AI事半功倍，不用AI落后时代。
+构建高质量的AI编程Skills库，利用AI来学习编程技术，让AI更好地替你打工。用好AI事半功倍，不用AI落后时代。
 =======
 # 中文AI Skills编程知识库
 
@@ -9,7 +9,7 @@
 [![中文文档](https://img.shields.io/badge/documentation-中文-brightgreen.svg)](#)
 ![Skills](https://img.shields.io/badge/skills-50+-brightblue.svg)
 
-## 📚 简介
+## 简介
 
 这是一个结构化的编程知识库，包含**100多个**精选的AI-powered Skills，涵盖：
 
@@ -22,7 +22,7 @@
 - ✅ **代码质量** - 测试、重构、优化
 - ✅ **编程语言** - Java、Python、TypeScript、JavaScript、Go、Rust、C、C++
 
-## 🎯 快速开始
+## 快速开始
 
 ### 浏览Skills
 
@@ -135,12 +135,12 @@ ls scripts/
 
 ### SKILL.md
 每个Skill的主要文档，包含：
-- 📌 目的和使用场景
-- 🎓 核心概念讲解
-- 💻 实战代码示例
-- ⚡ 性能优化建议
-- ❓ 常见问题解答
-- 📚 相关资源链接
+- 目的和使用场景
+- 核心概念讲解
+- 实战代码示例
+- 性能优化建议
+- 常见问题解答
+- 相关资源链接
 
 ### 示例代码（scripts/）
 - Python、JavaScript、Go、Java等多语言示例
@@ -241,5 +241,5 @@ ls scripts/
 **我是Jarry 李春平** **祝您学习愉快！**
 - mail: lichunping@buaa.edu.cn
 - weixin: springbuild
-- 🌟 给个Star支持本项目
+- 🌟 感谢您给本项目点个Star
 
