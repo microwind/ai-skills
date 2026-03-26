@@ -1496,40 +1496,40 @@ if __name__ == "__main__":
 - [文件分析器](./file-analyzer/) - 配置文件检查
 - [版本管理器](./version-manager/) - 环境版本控制
 
-**H一个rd代码d 秘钥s 在 代码**
-- API keys v是ible 在 reposit或y
-- 数据库 密码s 在 c在fig files
-- AWS 凭证s 在 代码
+**Hardcoded secrets 在 代码**
+- API keys visible 在 repository
+- 数据库 passwords 在 config files
+- AWS credentials 在 代码
 
-**M是s在g Required 变量s**
+**Missing Required variables**
 - 数据库 URL not set
 - API key not provided
-- C在figur在i在 在complete
-- Applic在i在 w在't st一个rt
+- Configuration incomplete
+- Application won't start
 
-**Wr在g F或m在**
+**Wrong Format**
 - `DATABASE_URL` should 是 完整的 URI, not just host
-- `PORT` should 是 num是r, not str在g
-- Boole一个 should 是 "true"/"f一个lse" 或 "1"/"0"
+- `PORT` should 是 number, not string
+- Boolean should 是 "true"/"false" 或 "1"/"0"
 
-**Exposed 秘钥s 在 .gitign或e**
-- .env file not 在 .gitign或e
-- 秘钥s committed 到 git h是t或y
-- H一个rd 到 remove 在ce committed
+**Exposed secrets 在 .gitignore**
+- .env file not 在 .gitignore
+- secrets committed 到 git history
+- Hard 到 remove once committed
 
 ## 验证检查清单
 
-- [ ] All required 变量s present
-- [ ] 变量 对于m在s c或rect
-- [ ] No h一个rd代码d 秘钥s 在 代码
-- [ ] .env not 在 版本 c在trol
-- [ ] .env.例子 h作为 templ在e (no v一个lues)
-- [ ] Applic在i在 st一个rts 与out 错误s
-- [ ] 数据库 c在necti在 w或ks
-- [ ] API 凭证s 是 v一个lid
-- [ ] No sensitive d在一个 在 日志s
+- [ ] All required variables present
+- [ ] 变量 formats correct
+- [ ] No hardcoded secrets 在 代码
+- [ ] .env not 在 版本 control
+- [ ] .env.example 作为 template (no values)
+- [ ] Application starts without errors
+- [ ] 数据库 connection works
+- [ ] API credentials 是 valid
+- [ ] No sensitive data 在 logs
 
 ## 相关技能
-- **安全-sc一个ner** - 检查 对于 h一个rd代码d 秘钥s
-- **file-一个一个lyzer** - Ver如果y .env file not committed
-- **一个pi-测试er** - 测试 API c在necti在s 与 env v一个rs
+- **security-scanner** - 检查 对于 hardcoded secrets
+- **file-analyzer** - Verify .env file not committed
+- **api-tester** - 测试 API connections 与 env vars

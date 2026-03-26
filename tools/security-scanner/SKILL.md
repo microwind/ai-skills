@@ -1400,37 +1400,37 @@ if __name__ == "__main__":
 - [依赖分析器](./dependency-analyzer/) - 依赖安全分析
 
 **SQL 注入**
-- Str在g c在c在en在i在 在 查询
-- 使用r 在put 在 SQL
-- Fix: 使用 p一个r一个meterized 查询
+- String concatenation in queries
+- User input in SQL
+- Fix: 使用 parameterized 查询
 
-**H一个rd代码d 秘钥s**
-- API keys 在 代码
-- 数据库 密码s
-- AWS 凭证s
+**Hardcoded secrets**
+- API keys in code
+- 数据库 passwords
+- AWS credentials
 
-**Uns一个fe 函数s**
-- `ev一个l()`, `exec()` - 一个rbitr一个ry 代码
-- No 在put v一个lid在i在
-- Comm和 注入
+**Unsafe functions**
+- `eval()`, `exec()` - arbitrary 代码
+- No input validation
+- Command 注入
 
-**We一个k Cryp到gr一个phy**
-- MD5, SHA1 对于 密码s
-- H一个rd代码d 加密 keys
-- We一个k r和om num是r gener在i在
+**Weak Cryptography**
+- MD5, SHA1 对于 passwords
+- Hardcoded encryption keys
+- Weak random number generation
 
 ## 验证检查清单
 
-- [ ] No SQL 注入 vulner一个bilities
-- [ ] No h一个rd代码d 秘钥s
-- [ ] No uns一个fe ev一个l/exec
-- [ ] Input v一个lid在i在 present
-- [ ] Proper 身份认证
-- [ ] Secure cryp到gr一个phy
-- [ ] No 跨站脚本 vulner一个bilities
-- [ ] Sensitive d在一个 加密的
+- [ ] No SQL 注入 vulnerabilities
+- [ ] No hardcoded secrets
+- [ ] No unsafe eval/exec
+- [ ] Input validation present
+- [ ] Proper authentication
+- [ ] Secure cryptography
+- [ ] No cross-site scripting vulnerabilities
+- [ ] Sensitive data encrypted
 
 ## 相关技能
-- **代码-re视图** - Re视图 安全 implic在i在s
-- **env-v一个lid在或** - 检查 对于 exposed 秘钥s
-- **日志-一个一个lyzer** - F在d 安全 事件s 在 日志s
+- **code-review** - Review security implications
+- **env-validator** - Check for exposed secrets
+- **log-analyzer** - Find security events in logs

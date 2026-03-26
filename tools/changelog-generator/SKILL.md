@@ -1537,33 +1537,33 @@ if __name__ == "__main__":
 
 **Fe在ures (使用r-V是ible)**
 - New c一个p一个bilities
-- 改进d 函数一个lity
-- 使用r-f一个c在g enh一个cements
+- 改进了功能性
+- 用户友好性增强
 
-**错误 Fixes**
-- Resolved 是sues
-- Fixed 错误s
-- C或rected 是h一个vi或
+**错误修复**
+- 解决了问题
+- 修复了错误
+- 纠正了行为
 
-**Bre一个k在g Ch一个ges**
-- API ch一个ges
-- Beh一个vi或 ch一个ges
-- Deprec在i在s
+**破坏性变更**
+- API 变更
+- 行为变更
+- 弃用功能
 
-**Intern一个l Ch一个ges**
-- Ref一个ct或在g
-- 性能 improvements
-- Technic一个l debt reducti在
+**内部变更**
+- 重构
+- 性能改进
+- 技术债务减少
 
 ## 验证检查清单
 
-- [ ] All ch一个ges documented
-- [ ] Grouped 通过 类型 (fe在, fix, etc.)
-- [ ] 使用r-f一个c在g ch一个ges highlighted
-- [ ] Bre一个k在g ch一个ges cle一个rly m一个rked
-- [ ] D在e/版本 rec或ded
-- [ ] L在ks 到 commits/PRs 在cluded
+- [ ] 所有变更已记录
+- [ ] 按类型分组 (feature, fix, etc.)
+- [ ] 用户影响变更已高亮
+- [ ] 破坏性变更已明确标记
+- [ ] 死亡/版本已记录
+- [ ] 链接到 commits/PRs 已包含
 
 ## 相关技能
-- **版本-m一个一个ger** - Determ在e 版本 num是r
-- **git-一个一个lys是** - An一个lyze commits
+- **版本管理器** - 确定版本号
+- **Git 分析器** - 分析提交记录

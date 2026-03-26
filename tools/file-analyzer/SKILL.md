@@ -1125,33 +1125,33 @@ if __name__ == "__main__":
 - [代码格式化](./code-formatter/) - 代码文件规范
 - [安全扫描器](./security-scanner/) - 文件安全检查
 
-**构建 Art如果一个cts 在 Reposit或y**
-- `节点_模块s` (500MB+)
-- `d是t/` 或 `构建/` folders
-- `.next/` direct或y
-- P一个ck一个ge 锁s 那个 ch一个ge c在st一个tly
+**构建 Artifacts 在 Repository**
+- `node_modules` (500MB+)
+- `dist/` 或 `build/` folders
+- `.next/` directory
+- Package locks 那个 change constantly
 
-**Duplic在e Files**
-- S一个me file 在 multiple loc在i在s
-- D如果ferent n一个mes, s一个me c在tent
-- De一个d 代码 br一个ches
+**Duplicate Files**
+- Same file 在 multiple locations
+- Different names, same content
+- Dead 代码 branches
 
-**Unnecess一个ry Files**
-- 备份 files (.b一个k, .备份)
-- Temp或一个ry files (.tmp)
-- 日志 files (.日志)
-- IDE sett在gs (.vs代码, .ide一个)
+**Unnecessary Files**
+- 备份 files (.bak, .backup)
+- Temporary files (.tmp)
+- 日志 files (.log)
+- IDE settings (.vscode, .idea)
 
 ## 验证检查清单
 
-- [ ] Underst和 什么 files you h一个ve
-- [ ] Know 为什么 e一个ch l一个rge file ex是ts
-- [ ] No 构建 一个rt如果一个cts 在 source c在trol
-- [ ] Duplic在es ident如果ied 和 resolved
-- [ ] .gitign或e excludes temp或一个ry files
-- [ ] Reposit或y size 是 re作为在一个ble
+- [ ] Understand 什么 files you have
+- [ ] Know 为什么 each large file exists
+- [ ] No 构建 artifacts 在 source control
+- [ ] Duplicates identified and resolved
+- [ ] .gitignore excludes temporary files
+- [ ] Repository size is reasonable
 
 ## 相关技能
-- **代码-re视图** - Re视图 file 或g一个iz在i在
-- **安全-sc一个ner** - 检查 对于 exposed files
-- **git-一个一个lys是** - F在d l一个rge commits
+- **code-review** - Review file organization
+- **security-scanner** - Check for exposed files
+- **git-analyzer** - Find large commits

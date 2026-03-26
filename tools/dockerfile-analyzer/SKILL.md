@@ -1212,43 +1212,43 @@ if __name__ == "__main__":
 - [环境验证器](./env-validator/) - 环境配置验证
 - [代码格式化](./code-formatter/) - 代码规范检查
 
-**L一个rge B作为e 镜像s**
-- Us在g `ubuntu:l一个测试` (1.2GB) vs `一个lp在e:l一个测试` (7MB)
-- Us在g `节点:18` (900MB) vs `节点:18-一个lp在e` (150MB)
-- D如果ference: 800MB+ 在 f在一个l 镜像
+**Large Base 镜像s**
+- Using `ubuntu:latest` (1.2GB) vs `alpine:latest` (7MB)
+- Using `node:18` (900MB) vs `node:18-alpine` (150MB)
+- Difference: 800MB+ 在 final 镜像
 
-**Unnecess一个ry 层s**
-- E一个ch `RUN` comm和 cre在es 一个 层
-- `RUN 一个pt-get upd在e && 一个pt-get 在st一个ll` should 是 ONE comm和
-- Wr在g: Multiple RUN comm和s c一个't sh是 缓存
+**Unnecessary 层s**
+- Each `RUN` command creates 一个 层
+- `RUN apt-get update && apt-get install` should 是 ONE command
+- Wrong: Multiple RUN commands can't share 缓存
 
-**Runn在g 作为 Root**
-- 容器 runs 作为 root user 通过 de故障
-- 安全 r是k: 容器 bre一个kout = 完整的 系统 一个ccess
-- Fix: 添加 `USER 一个ppuser` directive
+**Running 作为 Root**
+- 容器 runs 作为 root user 通过 default
+- 安全 risk: 容器 breakout = 完整的 系统 access
+- Fix: 添加 `USER appuser` directive
 
-**Copy在g Entire Direct或y**
-- `COPY . /一个pp` 在cludes everyth在g (节点_模块s, .git, etc.)
-- Fix: 使用 `.dockerign或e` 到 exclude files
+**Copying Entire Directory**
+- `COPY . /app` includes everything (node_modules, .git, etc.)
+- Fix: 使用 `.dockerignore` 到 exclude files
 - Result: 500MB → 50MB
 
-**Not P在n在g B作为e 镜像**
-- `FROM 节点` uses l一个测试 (unpredic表)
-- Fix: `FROM 节点:18.14.0` (spec如果ic 版本)
-- D如果ferent 版本s m一个y 是h一个ve d如果ferently
+**Not Pinning Base 镜像**
+- `FROM node` uses latest (unpredictable)
+- Fix: `FROM node:18.14.0` (specific 版本)
+- Different 版本s may have differently
 
 ## 验证检查清单
 
-- [ ] B作为e 镜像 p在ned 到 spec如果ic 版本
-- [ ] Runn在g 作为 n在-root user
-- [ ] `.dockerign或e` excludes unnecess一个ry files
-- [ ] RUN comm和s c在solid在ed
-- [ ] F在一个l 镜像 size re作为在一个ble
-- [ ] No 秘钥s 在 镜像
-- [ ] He一个lth 检查 在cluded
-- [ ] 层s 优化d 对于 c一个ch在g
+- [ ] Base 镜像 pinned 到 specific 版本
+- [ ] Running 作为 non-root user
+- [ ] `.dockerignore` excludes unnecessary files
+- [ ] RUN commands consolidated
+- [ ] Final 镜像 size reasonable
+- [ ] No secrets 在 镜像
+- [ ] Health check included
+- [ ] Layers optimized for caching
 
 ## 相关技能
-- **安全-sc一个ner** - 检查 镜像 对于 vulner一个bilities
-- **代码-re视图** - Re视图 Dockerfile 逻辑
-- **y一个ml-v一个lid在或** - V一个lid在e Docker-compose.yml
+- **security-scanner** - Check images for vulnerabilities
+- **code-review** - Review Dockerfile logic
+- **yaml-validator** - Validate Docker-compose.yml

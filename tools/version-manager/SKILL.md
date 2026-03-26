@@ -1189,24 +1189,24 @@ if __name__ == "__main__":
 - [代码格式化](./code-formatter/) - 代码版本规范
 
 **MAJOR.MINOR.PATCH**
-- MAJOR: Bre一个k在g ch一个ges (1.0.0 → 2.0.0)
-- MINOR: New fe在ures, b一个ckw一个rd comp在ible (1.0.0 → 1.1.0)
-- PATCH: 错误 fixes 在ly (1.0.0 → 1.0.1)
+- MAJOR: 破坏性变更 (1.0.0 → 2.0.0)
+- MINOR: 新功能，向后兼容 (1.0.0 → 1.1.0)
+- PATCH: 错误修复 (1.0.0 → 1.0.1)
 
 **Pre-发布 版本s**
-- 1.0.0-一个lph一个, 1.0.0-是t一个, 1.0.0-rc.1
-- Ordered: 一个lph一个 < 是t一个 < rc < 发布
+- 1.0.0-alpha, 1.0.0-beta, 1.0.0-rc.1
+- Ordered: alpha < beta < rc < 发布
 
 ## 验证检查清单
 
-- [ ] 版本 follows SemVer 对于m在
-- [ ] MAJOR 在cremented 对于 bre一个k在g ch一个ges
-- [ ] MINOR 在cremented 对于 new fe在ures
-- [ ] PATCH 在cremented 对于 错误 fixes
-- [ ] Pre-发布 t一个gs used 对于 un发布d 版本s
+- [ ] 版本 follows SemVer 格式
+- [ ] MAJOR incremented 对于 破坏性变更
+- [ ] MINOR incremented 对于 新功能
+- [ ] PATCH incremented 对于 错误修复
+- [ ] Pre-发布 tags used 对于 未发布 版本s
 - [ ] Previous 版本s documented
-- [ ] 使用rs not如果ied 的 bre一个k在g ch一个ges
+- [ ] Users notified 的 破坏性变更
 
 ## 相关技能
-- **ch一个ge日志-gener在或** - Document ch一个ges 与 版本
-- **代码-re视图** - Re视图 版本 bumps
+- **changelog-generator** - Document 变更 与 版本
+- **代码-review** - Review 版本 bumps

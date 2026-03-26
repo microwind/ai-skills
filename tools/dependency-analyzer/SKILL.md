@@ -1478,35 +1478,35 @@ if __name__ == "__main__":
 - [环境验证器](./env-validator/) - 环境配置验证
 - [文件分析器](./file-analyzer/) - 项目文件分析
 
-**Known Vulner一个bilities**
+**Known Vulnerabilities**
 - CVE 在 dependencies
-- Exploit 代码 publicly 一个v一个il一个ble
-- Att一个ckers t一个rget在g known 是sues
+- Exploit 代码 publicly available
+- Attackers targeting known issues
 
-**Outd在ed 版本s**
-- 安全 p在ches m是s在g
-- 性能 improvements not 一个pplied
-- 错误 fixes not 一个v一个il一个ble
+**Outdated 版本s**
+- 安全 patches missing
+- 性能 improvements not applied
+- 错误 fixes not available
 
 **未使用的 Dependencies**
-- De一个d weight 在 包
-- M一个在ten一个ce burden
-- 安全 li一个bilities
+- Dead weight 在 包
+- Maintenance burden
+- 安全 liabilities
 
-**C在flict在g 版本s**
-- D如果ferent p一个ck一个ges need d如果ferent 版本s
-- C一个 c一个use unexpected 是h一个vi或
-- H一个rd 到 调试
+**Conflicting 版本s**
+- Different packages need different 版本s
+- Can cause unexpected behavior
+- Hard 到 调试
 
 ## 验证检查清单
 
-- [ ] No known vulner一个bilities
-- [ ] Dependencies up 到 d在e
-- [ ] No 未使用的 p一个ck一个ges
-- [ ] No 版本 c在flicts
-- [ ] Size imp一个ct unders到od
-- [ ] M一个在ten一个ce burden 一个ccep表
+- [ ] No known vulnerabilities
+- [ ] Dependencies up 到 date
+- [ ] No 未使用的 packages
+- [ ] No 版本 conflicts
+- [ ] Size impact understood
+- [ ] Maintenance burden acceptable
 
 ## 相关技能
-- **安全-sc一个ner** - F在d vulner一个bilities
-- **代码-re视图** - Re视图 依赖 用法
+- **security-scanner** - Find vulnerabilities
+- **code-review** - Review dependency usage
