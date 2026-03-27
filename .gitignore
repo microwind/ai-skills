@@ -4,7 +4,10 @@ a.out
 *.class
 target/
 *.pyc
+
+# tools config
 .idea
+.vscode
 
 # MAC
 .DS_Store
