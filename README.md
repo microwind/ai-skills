@@ -1,6 +1,7 @@
 # AI编程：Skills知识库大全
 
-> 🚀 构建高质量的AI编程Skills库，为程序员量身打造--包含各种流行框架与开发工具。帮助程序员学习和快速查询各类编程技能。**利用AI来学习编程技术，让AI更好地替你打工。**
+> 🚀 构建高质量的AI编程Skills库，为程序员量身打造--包含各种流行框架与开发工具。帮助程序员学习各类编程技能，快速构建工程系统。
+> **利用AI来学习编程技术，让AI更好地替你打工。**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)[![中文文档](https://img.shields.io/badge/documentation-中文-brightgreen.svg)](#)![Skills](https://img.shields.io/badge/skills-50+-brightblue.svg)[![GitHub stars](https://img.shields.io/github/stars/microwind/ai-skills.svg?style=social&label=Star)](https://github.com/microwind/ai-skills) [![GitHub forks](https://img.shields.io/github/forks/microwind/ai-skills.svg?style=social&label=Fork)](https://github.com/microwind/ai-skills/fork)
 
