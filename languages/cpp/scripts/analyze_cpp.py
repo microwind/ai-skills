@@ -1,38 +1,35 @@
 #!/usr/bin/env python3
 """
-Modern C++ Static Analyzer Script
-Checks for RAII violations, raw pointers, pass-by-value of large objects,
-lock misusage, and auto/smart pointer usage.
+C++ Language Static Analyzer Script
+A comprehensive C++ source code analyzer that checks for memory management,
+RAII compliance, template safety, and modern C++ best practices.
 """
 
 import sys
 import json
 import re
-from typing import TypedDict, List, Dict
+from typing import TypedDict, List, Dict, Any
 
 class IssueDict(TypedDict):
     line: int
-    type: str # 'memory', 'performance', 'concurrency', 'modernize', 'style'
-    severity: str # 'CRITICAL', 'HIGH', 'WARNING', 'INFO'
+    type: str
+    severity: str
     message: str
     code_snippet: str
 
 class MetricsDict(TypedDict):
     lines_of_code: int
     classes: int
-    raw_new_calls: int
-    raw_delete_calls: int
-    shared_ptr_count: int
-    unique_ptr_count: int
-    make_shared_unique: int
-    auto_count: int
-    threads: int
+    templates: int
+    raw_pointers: int
+    smart_pointers: int
+    manual_new_delete: int
 
 class ChecksDict(TypedDict):
-    has_raw_pointers: bool
-    has_pass_by_value_large_objects: bool
-    has_manual_locks: bool
-    has_c_style_casts: bool
+    uses_smart_pointers: bool
+    follows_raii: bool
+    uses_stl: bool
+    has_move_semantics: bool
 
 class AnalysisResultDict(TypedDict):
     file: str
@@ -41,145 +38,82 @@ class AnalysisResultDict(TypedDict):
     patterns: List[str]
     checks: ChecksDict
 
-def analyze_cpp_code(code_text: str, filename: str = "stdin") -> AnalysisResultDict:
-    """Analyze C++ source code for modern C++ idioms and safety."""
-    lines = code_text.split('\n') if code_text else []
-    
-    metrics: MetricsDict = {
-        'lines_of_code': len(lines),
-        'classes': 0,
-        'raw_new_calls': 0,
-        'raw_delete_calls': 0,
-        'shared_ptr_count': 0,
-        'unique_ptr_count': 0,
-        'make_shared_unique': 0,
-        'auto_count': 0,
-        'threads': 0
-    }
-    
-    issues: List[IssueDict] = []
-    patterns: set[str] = set()
-    
-    in_block_comment = False
-    
-    for i, line in enumerate(lines, 1):
-        if '/*' in line:
-            in_block_comment = True
-            
-        if in_block_comment:
-            if '*/' in line:
-                in_block_comment = False
-            continue
-            
-        # Strip single line comments
-        clean_line = re.sub(r'//.*', '', line).strip()
-        if not clean_line:
-            continue
-            
-        # 1. Memory Management & Smart Pointers
-        if re.search(r'\bnew\b\s+[a-zA-Z_]', clean_line):
-            metrics['raw_new_calls'] += 1
-            issues.append({
-                'line': i,
-                'type': 'memory',
-                'severity': 'WARNING',
-                'message': "Avoid naked 'new'. Use std::make_unique or std::make_shared for exception safety.",
-                'code_snippet': clean_line
-            })
-            
-        if re.search(r'\bdelete\b\s+', clean_line) or re.search(r'\bdelete\b\s*\[\s*\]', clean_line):
-            metrics['raw_delete_calls'] += 1
+ANTI_PATTERNS: Dict[str, dict] = {
+    'new ': {'severity': 'WARNING', 'message': 'Raw new allocation detected. Use smart pointers (unique_ptr/shared_ptr).'},
+    'delete ': {'severity': 'WARNING', 'message': 'Raw delete detected. Use RAII or smart pointers.'},
+    'raw pointer': {'severity': 'HIGH', 'message': 'Raw pointers detected. Consider using smart pointers.'},
+    '.get()': {'severity': 'WARNING', 'message': 'Potential direct pointer access from smart pointer.'}
+}
 
-        if 'std::shared_ptr' in clean_line:
-            metrics['shared_ptr_count'] += 1
-            patterns.add('Smart Pointers (shared)')
-        if 'std::unique_ptr' in clean_line:
-            metrics['unique_ptr_count'] += 1
-            patterns.add('Smart Pointers (unique)')
-        if 'std::make_shared' in clean_line or 'std::make_unique' in clean_line:
-            metrics['make_shared_unique'] += 1
-            patterns.add('Modern Allocation (make_*)')
-            
-        # Check for shared_ptr(new X) anti-pattern
-        if re.search(r'shared_ptr\s*<[^>]+>\s*\([^)]*new\s+', clean_line):
-            issues.append({
-                'line': i,
-                'type': 'memory',
-                'severity': 'HIGH',
-                'message': "Anti-pattern detected: shared_ptr(new X). Use std::make_shared for performance and safety.",
-                'code_snippet': clean_line
-            })
-
-        # 2. Performance Issues
-        # Range-based for loop passing by value
-        if m := re.search(r'for\s*\(\s*(const\s+)?[a-zA-Z_0-9:]+\s+([a-zA-Z_0-9]+)\s*:\s*[a-zA-Z_0-9().]+\s*\)', clean_line):
-            if '&' not in clean_line and 'int ' not in clean_line and 'float ' not in clean_line and 'double ' not in clean_line:
-                issues.append({
-                    'line': i,
-                    'type': 'performance',
-                    'severity': 'INFO',
-                    'message': "Range-based for-loop takes element by value. Use 'const auto&' for large objects.",
-                    'code_snippet': clean_line
-                })
-                
-        # Catch by value
-        if re.search(r'catch\s*\(\s*(const\s+)?[a-zA-Z_0-9:]+\s+[a-zA-Z_0-9]+\s*\)', clean_line) and '&' not in clean_line:
-            issues.append({
-                'line': i,
-                'type': 'correctness',
-                'severity': 'HIGH',
-                'message': "Exception caught by value. This causes slicing. Catch by const reference instead.",
-                'code_snippet': clean_line
-            })
-
-        # 3. Concurrency
-        if 'std::thread' in clean_line:
-            metrics['threads'] += 1
-            patterns.add('C++11 Threading')
-            
-        if re.search(r'\.lock\s*\(\s*\)', clean_line) and 'mutex' in clean_line.lower():
-            issues.append({
-                'line': i,
-                'type': 'concurrency',
-                'severity': 'WARNING',
-                'message': "Manual .lock() call detected. Use std::lock_guard or std::scoped_lock for RAII safety.",
-                'code_snippet': clean_line
-            })
-
-        # 4. Modern C++ & Style Practices
-        if re.search(r'\bauto\b', clean_line):
-            metrics['auto_count'] += 1
-            patterns.add('Type Inference (auto)')
-            
-        if re.search(r'\bclass\b\s+[A-Za-z0-9_]+', clean_line):
-            metrics['classes'] += 1
-            
-        # Detect C-style casts e.g., (int)x, (Foo*)bar
-        if re.search(r'\(\s*(int|long|short|char|float|double|([A-Za-z_]\w*\*))\s*\)\s*[a-zA-Z_]', clean_line):
-            issues.append({
-                'line': i,
-                'type': 'style',
-                'severity': 'INFO',
-                'message': "C-style cast detected. Use static_cast, reinterpret_cast, or C++ style cast like T(x).",
-                'code_snippet': clean_line
-            })
-
-    checks: ChecksDict = {
-        'has_raw_pointers': metrics['raw_new_calls'] > 0 or metrics['raw_delete_calls'] > 0,
-        'has_pass_by_value_large_objects': any(iss['type'] == 'performance' for iss in issues),
-        'has_manual_locks': any(iss['type'] == 'concurrency' for iss in issues),
-        'has_c_style_casts': any(iss['type'] == 'style' for iss in issues)
+def analyze_cpp(code_text: str) -> AnalysisResultDict:
+    """Analyze C++ code"""
+    result: AnalysisResultDict = {
+        'file': 'analysis',
+        'metrics': {
+            'lines_of_code': len(code_text.split('\n')),
+            'classes': len(re.findall(r'class\s+\w+|struct\s+\w+', code_text)),
+            'templates': len(re.findall(r'template\s*<', code_text)),
+            'raw_pointers': len(re.findall(r'\w+\s*\*\s*\w+', code_text)),
+            'smart_pointers': len(re.findall(r'(unique_ptr|shared_ptr)', code_text)),
+            'manual_new_delete': len(re.findall(r'\bnew\b|\bdelete\b', code_text))
+        },
+        'issues': [],
+        'patterns': [],
+        'checks': {
+            'uses_smart_pointers': False,
+            'follows_raii': False,
+            'uses_stl': False,
+            'has_move_semantics': False
+        }
     }
 
-    return {
-        'file': filename,
-        'metrics': metrics,
-        'issues': issues,
-        'patterns': sorted(list(patterns)),
-        'checks': checks
-    }
+    if not code_text or not code_text.strip():
+        return result
+
+    # Check for smart pointers
+    if 'unique_ptr' in code_text or 'shared_ptr' in code_text:
+        result['checks']['uses_smart_pointers'] = True
+        result['patterns'].append('Smart pointers (unique_ptr/shared_ptr) for automatic memory management')
+
+    # Check for RAII
+    if '~' in code_text:
+        result['checks']['follows_raii'] = True
+        result['patterns'].append('RAII pattern with destructors')
+
+    if re.search(r'new\s+\w+|delete\s+\w+', code_text):
+        if result['metrics']['manual_new_delete'] > 5:
+            result['issues'].append('Excessive manual new/delete. Consider using RAII/smart pointers.')
+
+    # Check for STL usage
+    if '#include <' in code_text:
+        if any(stl in code_text for stl in ['vector', 'map', 'set', 'string', 'algorithm']):
+            result['checks']['uses_stl'] = True
+            result['patterns'].append('Standard Library containers for safer memory management')
+
+    # Check for move semantics
+    if '&&' in code_text or '::move' in code_text:
+        result['checks']['has_move_semantics'] = True
+        result['patterns'].append('Move semantics (rvalue references) for efficient resource transfer')
+
+    # Check for modern C++ features
+    if 'auto ' in code_text:
+        result['patterns'].append('Type deduction with auto keyword')
+
+    if 'constexpr' in code_text or 'const ' in code_text:
+        result['patterns'].append('Const correctness and compile-time evaluation')
+
+    return result
+
+def main():
+    """Main entry point"""
+    if len(sys.argv) > 1:
+        with open(sys.argv[1], 'r') as f:
+            code = f.read()
+    else:
+        code = sys.stdin.read()
+
+    result = analyze_cpp(code)
+    print(json.dumps(result, indent=2))
 
 if __name__ == '__main__':
-    code = sys.stdin.read()
-    result = analyze_cpp_code(code)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    main()

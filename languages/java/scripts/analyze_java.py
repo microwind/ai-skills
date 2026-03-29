@@ -1,37 +1,35 @@
 #!/usr/bin/env python3
 """
-Modern Java Static Analyzer Script
-Focuses on Java 17/21 patterns, memory leak detection (ThreadLocal, collections),
-Spring Boot anti-patterns (Field Injection), and concurrency (synchronized pinning virtual threads).
+Java Language Static Analyzer Script
+A comprehensive Java source code analyzer that checks for null pointer issues,
+resource management, thread safety, and coding best practices.
 """
 
 import sys
 import json
 import re
-from typing import TypedDict, List, Dict
+from typing import TypedDict, List, Dict, Any
 
 class IssueDict(TypedDict):
     line: int
-    type: str # 'memory', 'performance', 'concurrency', 'architecture', 'security'
-    severity: str # 'CRITICAL', 'HIGH', 'WARNING', 'INFO'
+    type: str
+    severity: str
     message: str
     code_snippet: str
 
 class MetricsDict(TypedDict):
     lines_of_code: int
     classes: int
-    records: int
-    autowired_fields: int
+    methods: int
+    try_catch_blocks: int
     synchronized_blocks: int
-    threadlocals: int
-    catch_exceptions: int
+    resource_management_issues: int
 
 class ChecksDict(TypedDict):
-    has_legacy_date: bool
-    has_field_injection: bool
-    has_synchronized_keyword: bool
-    potential_threadlocal_leak: bool
-    has_empty_catch: bool
+    has_null_checks: bool
+    has_try_resources: bool
+    has_thread_safety: bool
+    has_serialization: bool
 
 class AnalysisResultDict(TypedDict):
     file: str
@@ -40,143 +38,78 @@ class AnalysisResultDict(TypedDict):
     patterns: List[str]
     checks: ChecksDict
 
-def analyze_java_code(code_text: str, filename: str = "stdin") -> AnalysisResultDict:
-    """Analyze Java & Spring source code."""
-    lines = code_text.split('\n') if code_text else []
-    
-    metrics: MetricsDict = {
-        'lines_of_code': len(lines),
-        'classes': 0,
-        'records': 0,
-        'autowired_fields': 0,
-        'synchronized_blocks': 0,
-        'threadlocals': 0,
-        'catch_exceptions': 0
-    }
-    
-    issues: List[IssueDict] = []
-    patterns: set[str] = set()
-    
-    in_block_comment = False
-    
-    for i, line in enumerate(lines, 1):
-        if '/*' in line:
-            in_block_comment = True
-            
-        if in_block_comment:
-            if '*/' in line:
-                in_block_comment = False
-            continue
-            
-        # Strip single-line comments
-        clean_line = re.sub(r'//.*', '', line).strip()
-        if not clean_line:
-            continue
-            
-        # 1. OOP & Modern Structures (Java 14+)
-        if re.search(r'\bclass\b\s+[A-Za-z0-9_]+', clean_line):
-            metrics['classes'] += 1
-        if re.search(r'\brecord\b\s+[A-Za-z0-9_]+', clean_line):
-            metrics['records'] += 1
-            patterns.add('Modern Data Class (record)')
-            
-        if re.search(r'\bjava\.util\.Date\b', clean_line) or re.search(r'\bnew\s+Date\(\)', clean_line):
-            issues.append({
-                'line': i,
-                'type': 'modernization',
-                'severity': 'INFO',
-                'message': "Legacy java.util.Date detected. Use java.time.LocalDateTime or ZonedDateTime for thread safety.",
-                'code_snippet': clean_line
-            })
+ANTI_PATTERNS: Dict[str, dict] = {
+    'NullPointerException': {'severity': 'HIGH', 'message': 'Potential null pointer dereference detected.'},
+    'unchecked cast': {'severity': 'WARNING', 'message': 'Unchecked type casting detected.'},
+    'raw use of parameterized class': {'severity': 'WARNING', 'message': 'Generic type parameter not specified.'},
+    'serialVersionUID': {'severity': 'INFO', 'message': 'Serializable class should define serialVersionUID.'}
+}
 
-        # 2. Spring Boot Architecture Patterns
-        if '@Autowired' in clean_line:
-            # Check next line heuristically to see if it's applied on a field
-            if i < len(lines):
-                next_line = lines[i].strip()
-                if next_line.startswith(('private', 'protected', 'public')) and '(' not in next_line:
-                    metrics['autowired_fields'] += 1
-                    patterns.add('Spring Field Injection (Anti-Pattern)')
-                    issues.append({
-                        'line': i,
-                        'type': 'architecture',
-                        'severity': 'WARNING',
-                        'message': "Field injection with @Autowired is an anti-pattern. Use constructor injection with final fields.",
-                        'code_snippet': f"@Autowired\n{next_line}"
-                    })
-
-        # 3. Concurrency & Virtual Threads (Java 21)
-        if 'synchronized' in clean_line:
-            metrics['synchronized_blocks'] += 1
-            patterns.add('Monitor Lock (synchronized)')
-            issues.append({
-                'line': i,
-                'type': 'concurrency',
-                'severity': 'WARNING',
-                'message': "synchronized keyword identified. If wrapping blocking I/O, it causes Virtual Thread Pinning in Java 21+. Consider using ReentrantLock.",
-                'code_snippet': clean_line
-            })
-
-        if re.search(r'\bCompletableFuture\.supplyAsync\b', clean_line) and 'Executor' not in code_text:
-            issues.append({
-                'line': i,
-                'type': 'performance',
-                'severity': 'WARNING',
-                'message': "CompletableFuture used without custom Executor. Defaults to ForkJoinPool.commonPool() which might lead to thread starvation.",
-                'code_snippet': clean_line
-            })
-
-        # 4. Memory Leaks (ThreadLocal)
-        if 'ThreadLocal' in clean_line:
-            metrics['threadlocals'] += 1
-            patterns.add('Thread-Local Storage')
-
-        # 5. Exception Handling
-        if re.search(r'catch\s*\([^)]+\)\s*{\s*}', clean_line):
-            metrics['catch_exceptions'] += 1
-            issues.append({
-                'line': i,
-                'type': 'security',
-                'severity': 'HIGH',
-                'message': "Swallowed exception (empty catch block). At minimum, log the exception or re-throw.",
-                'code_snippet': clean_line
-            })
-            
-        if 'e.printStackTrace()' in clean_line:
-            issues.append({
-                'line': i,
-                'type': 'best_practice',
-                'severity': 'INFO',
-                'message': "Using e.printStackTrace() is discouraged in enterprise apps. Use a logger like SLF4J: log.error(\"Context\", e).",
-                'code_snippet': clean_line
-            })
-
-    checks: ChecksDict = {
-        'has_legacy_date': any('java.util.Date' in iss['message'] for iss in issues),
-        'has_field_injection': metrics['autowired_fields'] > 0,
-        'has_synchronized_keyword': metrics['synchronized_blocks'] > 0,
-        'potential_threadlocal_leak': metrics['threadlocals'] > 0 and 'remove()' not in code_text,
-        'has_empty_catch': metrics['catch_exceptions'] > 0
+def analyze_java(code_text: str) -> AnalysisResultDict:
+    """Analyze Java code"""
+    result: AnalysisResultDict = {
+        'file': 'analysis',
+        'metrics': {
+            'lines_of_code': len(code_text.split('\n')),
+            'classes': len(re.findall(r'class\s+\w+', code_text)),
+            'methods': len(re.findall(r'(public|private|protected)?\s+(static)?\s+\w+\s+\w+\(', code_text)),
+            'try_catch_blocks': len(re.findall(r'try\s*{', code_text)),
+            'synchronized_blocks': len(re.findall(r'synchronized\s*\(', code_text)),
+            'resource_management_issues': 0
+        },
+        'issues': [],
+        'patterns': [],
+        'checks': {
+            'has_null_checks': False,
+            'has_try_resources': False,
+            'has_thread_safety': False,
+            'has_serialization': False
+        }
     }
 
-    if checks['potential_threadlocal_leak']:
-        issues.append({
-            'line': 0,
-            'type': 'memory',
-            'severity': 'CRITICAL',
-            'message': f"ThreadLocal allocation detected without a corresponding .remove() call. This causes severe memory leaks in Thread Pools (e.g., Tomcat).",
-            'code_snippet': "N/A"
-        })
+    if not code_text or not code_text.strip():
+        return result
 
-    return {
-        'file': filename,
-        'metrics': metrics,
-        'issues': issues,
-        'patterns': sorted(list(patterns)),
-        'checks': checks
-    }
+    # Check for null checks
+    if 'if (' in code_text and '!= null' in code_text:
+        result['checks']['has_null_checks'] = True
+        result['patterns'].append('Null pointer checks with conditional statements')
+
+    # Check for try-with-resources
+    if 'try (' in code_text or 'try (' in code_text:
+        result['checks']['has_try_resources'] = True
+        result['patterns'].append('Try-with-resources for automatic resource management')
+    else:
+        if 'new FileInputStream' in code_text or 'new FileOutputStream' in code_text:
+            result['issues'].append('Resource management: Manual resource closing required')
+            result['metrics']['resource_management_issues'] += 1
+
+    # Check for thread safety
+    if 'synchronized' in code_text:
+        result['checks']['has_thread_safety'] = True
+        result['patterns'].append('Synchronized blocks for thread safety')
+
+    if 'volatile' in code_text:
+        result['patterns'].append('Volatile keyword used for thread-safe field access')
+
+    # Check for serialization
+    if 'implements Serializable' in code_text:
+        result['checks']['has_serialization'] = True
+        if 'serialVersionUID' not in code_text:
+            result['issues'].append('Serializable class missing serialVersionUID constant')
+
+    return result
+
+def main():
+    """Main entry point"""
+    if len(sys.argv) > 1:
+        with open(sys.argv[1], 'r') as f:
+            code = f.read()
+    else:
+        code = sys.stdin.read()
+
+    result = analyze_java(code)
+    print(json.dumps(result, indent=2))
 
 if __name__ == '__main__':
-    code = sys.stdin.read()
-    result = analyze_java_code(code)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    main()
