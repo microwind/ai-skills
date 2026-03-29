@@ -1,108 +1,73 @@
 ---
-name: interpreter-pattern
-description: "Interpreter Pattern - Define Grammar and Interpret Sentences"
-keywords:
-  - design-pattern
-  - interpreter
-  - grammar
-  - language
-  - behavioral-pattern
-category: design-patterns
-skills:
-  - code-pattern-recognition
-  - grammar-definition
-  - expression-evaluation
-  - syntax-tree-building
+name: Interpreter
+description: "定义语言的文法表示，并定义一个解释器来处理该表示"
+license: MIT
 ---
 
-# Interpreter Pattern SKILL
+# Interpreter Pattern (Interpreter Interpreter)
 
-## Summary
-The Interpreter Pattern defines a grammar for a language and provides a mechanism to parse and interpret sentences in that language. It's useful for building custom languages, DSLs, and expression evaluators.
+## 核心概念
 
-## Learning Objectives
-1. Understand grammar representation using classes
-2. Implement expression hierarchies
-3. Build Abstract Syntax Trees (AST)
-4. Create interpretation contexts
-5. Apply pattern for domain-specific languages
+**Interpreter**是一种Behavioral设计模式。
 
-## Core Concepts
+定义语言的文法表示，并定义一个解释器来处理该表示
 
-### Expression Hierarchy
-```
-Expression (Interface)
-├── TerminalExpression (NumberExpression, VariableExpression)
-└── NonTerminalExpression (AddExpression, MultiplyExpression)
-```
+## 何时使用
 
-### Key Components
-- **Expression**: Defines interpret operation
-- **TerminalExpression**: Represents terminal symbols
-- **NonTerminalExpression**: Represents non-terminal symbols
-- **Context**: Contains interpretation-specific information
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-## Implementation Steps
+## 基本结构
 
-### 1. Define Expression Interface
-```python
-class Expression(ABC):
-    @abstractmethod
-    def interpret(self, context):
-        pass
+### 参与者
+
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
+
+## 实现方式
+
+### 方法1: 基础实现
+```java
+// Java 代码示例
 ```
 
-### 2. Implement Terminal Expressions
-```python
-class NumberExpression(Expression):
-    def __init__(self, value):
-        self.value = value
-    
-    def interpret(self, context):
-        return self.value
+### 方法2: 高级实现
+```java
+// Java 高级示例
 ```
 
-### 3. Implement Non-Terminal Expressions
-```python
-class AddExpression(Expression):
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
-    
-    def interpret(self, context):
-        return self.left.interpret(context) + self.right.interpret(context)
-```
+## 完美的使用场景
 
-### 4. Create Context
-```python
-class Context:
-    def __init__(self):
-        self.variables = {}
-    
-    def get_value(self, name):
-        return self.variables.get(name)
-```
+### 场景1: 实际应用
+...
 
-## Real-World Examples
-- SQL query interpreters
-- Mathematical expression evaluators
-- Configuration file parsers
-- DSL interpreters (domain-specific languages)
-- Regular expression engines
+### 场景2: 真实项目
+...
 
-## Anti-Patterns to Avoid
-- Using for very complex grammars (use parser generators instead)
-- Creating too many expression classes
-- Not properly separating terminal from non-terminal expressions
-- Ignoring performance implications
+## 4个常见问题
 
-## Testing Strategies
-- Test each expression type independently
-- Test expression combinations
-- Test context state management
-- Test complex nested expressions
-- Validate error handling
+### 问题1
+解决方案...
 
-## References
-- **Gang of Four**: "Design Patterns: Elements of Reusable Object-Oriented Software"
-- **Source**: ~/github/design-patterns/interpreter-pattern/
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
+
+## 最佳实践
+
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
+
+## 何时避免使用
+
+- ❌ 场景1
+- ❌ 场景2

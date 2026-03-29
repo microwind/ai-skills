@@ -1,30 +1,99 @@
-# Interpreter Pattern - Interactive Forms
+# Interpreter Pattern - 诊断与规划表
 
-## Pattern Recognition Form
+## 第1步: 需求诊断 - 你真的需要Interpreter吗？
 
-```yaml
-pattern: interpreter
-description: "Grammar representation and sentence interpretation"
-questions:
-  - question: "Does your code define a grammar or language structure?"
-    keywords: ["expression", "grammar", "language", "syntax"]
-    
-  - question: "Do you have terminal and non-terminal expressions?"
-    keywords: ["terminal", "non-terminal", "leaf", "composite"]
-    
-  - question: "Is there an interpret/evaluate method?"
-    keywords: ["interpret", "evaluate", "parse"]
-    
-  - question: "Do you maintain context for interpretation state?"
-    keywords: ["context", "state", "environment"]
+### 🔍 快速检查清单
+
+```
+□ 条件1
+□ 条件2
+□ 条件3
+□ 条件4
+□ 条件5
+□ 条件6
 ```
 
-## Implementation Checklist
+**诊断标准**:
+- ✅ 勾选 5 项以上 → **强烈推荐使用**
+- ⚠️ 勾选 3-4 项 → **可以使用**
+- ❌ 勾选 2 项以下 → **可能过度设计**
 
-- [ ] Define Expression interface
-- [ ] Create TerminalExpression for basic grammar rules
-- [ ] Create NonTerminalExpression for complex rules
-- [ ] Implement interpret() method in each expression
-- [ ] Create Context class for shared state
-- [ ] Build AST (Abstract Syntax Tree) structure
-- [ ] Test parsing and interpretation flow
+## 第2步: 实现方法选择
+
+| 方法 | 复杂度 | 适用场景 |
+|------|--------|---------|
+| 方法1 | ⭐ | 场景描述 |
+| 方法2 | ⭐⭐ | 场景描述 |
+| 方法3 | ⭐⭐⭐ | 场景描述 |
+
+## 第3步: 实现规划
+
+### 步骤1: 设计参与者
+- 参与者1: ________________
+- 参与者2: ________________
+- 参与者3: ________________
+
+### 步骤2: 接口设计
+- 接口1: ________________
+- 接口2: ________________
+
+### 步骤3: 实现策略
+- 策略1: ________________
+- 策略2: ________________
+
+## 第4步: 测试计划
+
+### 单元测试
+```java
+□ 测试基本功能
+□ 测试异常情况
+□ 性能测试
+```
+
+### 集成测试
+```java
+□ 与其他组件集成
+□ 端到端测试
+```
+
+## 第5步: 代码审查清单
+
+### 设计审查
+- [ ] 参与者职责清晰
+- [ ] 接口设计合理
+- [ ] 遵循单一职责原则
+- [ ] 遵循开闭原则
+
+### 实现审查
+- [ ] 代码易于理解
+- [ ] 异常处理完整
+- [ ] 文档充分
+
+### 性能审查
+- [ ] 性能指标达标
+- [ ] 内存占用可接受
+- [ ] 没有性能瓶颈
+
+## 常见陷阱预防
+
+### ⚠️ 陷阱1
+❌ 反面做法
+✅ 正确做法
+
+### ⚠️ 陷阱2
+❌ 反面做法
+✅ 正确做法
+
+## 快速参考
+
+### 决策流程图
+```
+问题? 
+├─ 是 → 使用Interpreter
+└─ 否 → 评估其他模式
+```
+
+### 快速启动模板
+```java
+// 最小可用实现
+```

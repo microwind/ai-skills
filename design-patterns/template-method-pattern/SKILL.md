@@ -1,107 +1,73 @@
 ---
-name: 模板方法模式
-description: "定义算法骨架，细节由子类实现。在需要算法框架稳定而实现多样时使用。"
+name: Template Method
+description: "定义算法的骨架，将某些处理延迟到子类"
 license: MIT
 ---
 
-# 模板方法模式 (Template Method Pattern)
+# Template Method Pattern (Template Method)
 
-## 概述
+## 核心概念
 
-模板方法模式在操作中定义算法的骨架，延迟一些步骤到子类。这个模式让子类在不改变算法结构的前提下重新定义某些步骤。
+**Template Method**是一种Behavioral设计模式。
 
-**核心原则**: 框架稳定，细节多样。
+定义算法的骨架，将某些处理延迟到子类
 
 ## 何时使用
 
-**始终:**
-- 算法框架固定
-- 实现细节多样
-- 避免代码重复
-- 数据处理流程
-- 请求处理流程
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-**触发短语:**
-- "算法框架"
-- "代码重复"
-- "步骤可定制"
-- "流程固定"
+## 基本结构
 
-## 模板方法的优缺点
+### 参与者
 
-### 优点 ✅
-- 代码复用
-- 框架控制
-- 职责清晰
-- 易于维护
-
-### 缺点 ❌
-- 类层级增加
-- 继承引入的复杂性
-- 违反 Liskov 原则可能
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
 
 ## 实现方式
 
-### 数据流处理
+### 方法1: 基础实现
 ```java
-public abstract class DataProcessor {
-    public final void process(String filename) {
-        String data = readData(filename);
-        String processed = processData(data);
-        writeData(processed);
-    }
-    
-    protected abstract String readData(String filename);
-    protected abstract String processData(String data);
-    protected abstract void writeData(String data);
-}
-
-public class CsvProcessor extends DataProcessor {
-    @Override
-    protected String readData(String filename) {
-        // 读取 CSV
-        return "...";
-    }
-    
-    @Override
-    protected String processData(String data) {
-        // 处理 CSV
-        return "...";
-    }
-    
-    @Override
-    protected void writeData(String data) {
-        // 写入 CSV
-    }
-}
+// Java 代码示例
 ```
 
-## 典型应用场景
+### 方法2: 高级实现
+```java
+// Java 高级示例
+```
 
-### 1. Spring 框架
-- 模板方法定义 Bean 生命周期
-- 子类实现初始化/销毁逻辑
+## 完美的使用场景
 
-### 2. 数据导入
-- 数据验证
-- 数据转换
-- 数据存储
+### 场景1: 实际应用
+...
 
-### 3. HTTP 请求处理
-- 参数解析
-- 权限检查
-- 业务处理
-- 响应构建
+### 场景2: 真实项目
+...
+
+## 4个常见问题
+
+### 问题1
+解决方案...
+
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
 
 ## 最佳实践
 
-1. ✅ 模板方法应该 final
-2. ✅ 清晰标注可重写方法
-3. ✅ 冲测方法数量合理
-4. ✅ 避免过深的继承链
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
 
 ## 何时避免使用
 
-- 步骤数很少
-- 步骤变化频繁
-- 不适合继承的场景
+- ❌ 场景1
+- ❌ 场景2

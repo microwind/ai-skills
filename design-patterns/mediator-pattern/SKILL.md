@@ -1,101 +1,73 @@
 ---
-name: 中介者模式
-description: "定义一个对象来封装一组对象间的交互。在需要协调多个对象时使用。"
+name: Mediator
+description: "定义一个对象封装一组对象之间的交互"
 license: MIT
 ---
 
-# 中介者模式 (Mediator Pattern)
+# Mediator Pattern (Mediator Mediator)
 
-## 概述
+## 核心概念
 
-中介者模式定义了一个对象来封装一组对象间的交互，促进了松耦合。这个模式使各对象间不需要显示相互关联。
+**Mediator**是一种Behavioral设计模式。
 
-**核心原则**: 集中交互，解耦对象。
+定义一个对象封装一组对象之间的交互
 
 ## 何时使用
 
-**始永:**
-- 多个对象通信复杂
-- 对象间耦合度高
-- 需要集中管理交互
-- 对话框内多控件
-- 聊天室
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-**触发短语:**
-- "多对象交互"
-- "耦合度高"
-- "集中管理"
-- "中介者"
+## 基本结构
 
-## 中介者的优缺点
+### 参与者
 
-### 优点 ✅
-- 分离对象间通信
-- 集中管理交互
-- 易于扩展
-- 降低耦合度
-
-### 缺点 ❌
-- 中介者可能复杂
-- 性能可能受影响
-- 违反单一职责原则
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
 
 ## 实现方式
 
-### 聊天室
+### 方法1: 基础实现
 ```java
-public interface Mediator {
-    void sendMessage(String message, User from, User to);
-}
-
-public class ChatRoom implements Mediator {
-    private List<User> users = new ArrayList<>();
-    
-    public void register(User user) {
-        users.add(user);
-        user.setMediator(this);
-    }
-    
-    @Override
-    public void sendMessage(String message, User from, User to) {
-        System.out.println(from.getName() + " sends to " + 
-            to.getName() + ": " + message);
-    }
-}
-
-public class User {
-    private String name;
-    private Mediator mediator;
-    
-    public void send(String message, User to) {
-        mediator.sendMessage(message, this, to);
-    }
-}
+// Java 代码示例
 ```
 
-## 典型应用场景
+### 方法2: 高级实现
+```java
+// Java 高级示例
+```
 
-### 1. 对话框
-- 按钮、输入框、标签交互
+## 完美的使用场景
 
-### 2. 聊天应用
-- 用户消息交互
+### 场景1: 实际应用
+...
 
-### 3. 空中交通管理
-- 飞机与控制塔交互
+### 场景2: 真实项目
+...
 
-### 4. GUI 框架
-- 组件交互管理
+## 4个常见问题
+
+### 问题1
+解决方案...
+
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
 
 ## 最佳实践
 
-1. ✅ 中介者职责清晰
-2. ✅ 支持灵活的消息格式
-3. ✅ 提供中介者接口
-4. ✅ 避免中介者过度复杂
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
 
 ## 何时避免使用
 
-- 只有两个对象通信
-- 交互很简单
-- 不需要集中管理
+- ❌ 场景1
+- ❌ 场景2

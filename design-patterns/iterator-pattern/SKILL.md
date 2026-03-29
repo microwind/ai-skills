@@ -1,137 +1,73 @@
 ---
-name: 迭代器模式
-description: "顺序访问聚合元素而不暴露结构。在需要遍历集合时使用。"
+name: Iterator
+description: "提供一种方法顺序访问容器中的各个元素"
 license: MIT
 ---
 
-# 迭代器模式 (Iterator Pattern)
+# Iterator Pattern (Iterator Iterator)
 
-## 概述
+## 核心概念
 
-迭代器模式提供一种方法顺序地访问一个聚合对象中的各个元素，而不需要暴露该对象的底层表示。
+**Iterator**是一种Behavioral设计模式。
 
-**核心原则**: 访问遍历，隐藏结构。
+提供一种方法顺序访问容器中的各个元素
 
 ## 何时使用
 
-**始终:**
-- 需要遍历集合
-- 不想暴露集合结构
-- 支持多种遍历方式
-- 链表、树、图遍历
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-**触发短语:**
-- "遍历集合"
-- "不同遍历方式"
-- "隐藏结构"
-- "顺序访问"
+## 基本结构
 
-## 迭代器的优缺点
+### 参与者
 
-### 优点 ✅
-- 隐藏集合内部结构
-- 支持多种遍历方式
-- 统一集合访问接口
-- 将迭代职责分离
-
-### 缺点 ❌
-- 对于简单集合过度设计
-- 添加新遍历方式需要新迭代器
-- 性能可能有轻微影响
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
 
 ## 实现方式
 
-### 集合遍历
+### 方法1: 基础实现
 ```java
-public interface Collection<E> {
-    Iterator<E> iterator();
-}
-
-public interface Iterator<E> {
-    boolean hasNext();
-    E next();
-}
-
-public class ListCollection<E> implements Collection<E> {
-    private List<E> items = new ArrayList<>();
-    
-    @Override
-    public Iterator<E> iterator() {
-        return new ListIterator();
-    }
-    
-    private class ListIterator implements Iterator<E> {
-        private int index = 0;
-        
-        @Override
-        public boolean hasNext() {
-            return index < items.size();
-        }
-        
-        @Override
-        public E next() {
-            return items.get(index++);
-        }
-    }
-}
+// Java 代码示例
 ```
 
-## 典型应用场景
-
-### 1. Java 集合框架
+### 方法2: 高级实现
 ```java
-List<String> list = new ArrayList<>();
-Iterator<String> iter = list.iterator();
-while (iter.hasNext()) {
-    System.out.println(iter.next());
-}
+// Java 高级示例
 ```
 
-### 2. 增强 for 循环
-```java
-for (String item : collection) {
-    System.out.println(item);
-}
-```
+## 完美的使用场景
 
-### 3. 反向遍历
-```java
-// 返回 ReverseIterator
-Collection<E> reversed = collection.reverseIterator();
-```
+### 场景1: 实际应用
+...
 
-### 4. 树遍历
-```java
-// 前序遍历
-TreeIterator preOrder = tree.preOrderIterator();
-// 中序遍历
-TreeIterator inOrder = tree.inOrderIterator();
-```
+### 场景2: 真实项目
+...
+
+## 4个常见问题
+
+### 问题1
+解决方案...
+
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
 
 ## 最佳实践
 
-1. ✅ Iterator 接口简洁
-2. ✅ 支持多种遍历方式
-3. ✅ 处理并发修改
-4. ✅ 提供 remove() 方法
-
-## Java 迭代器接口
-
-```java
-public interface Iterator<E> {
-    boolean hasNext();
-    E next();
-    default void remove() {
-        throw new UnsupportedOperationException();
-    }
-    default void forEachRemaining(Consumer<? super E> action) {
-        // 默认实现
-    }
-}
-```
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
 
 ## 何时避免使用
 
-- 只有一种遍历方式
-- 集合结构简单
-- 直接访问性能关键
+- ❌ 场景1
+- ❌ 场景2

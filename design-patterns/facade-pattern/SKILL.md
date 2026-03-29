@@ -1,117 +1,73 @@
 ---
-name: 外观模式
-description: "提供高层的统一接口。在需要简化复杂系统的接口时使用。"
+name: Facade
+description: "为复杂的系统提供统一的、简化的接口"
 license: MIT
 ---
 
-# 外观模式 (Facade Pattern)
+# Facade Pattern (Facade Facade)
 
-## 概述
+## 核心概念
 
-外观模式提供一个统一的高层接口，用来访问子系统中的一群接口。外观模式定义了一个高层接口，让客户端不需要直接与系统交互。
+**Facade**是一种Structural设计模式。
 
-**核心原则**: 简化复杂系统，提供统一入口。
+为复杂的系统提供统一的、简化的接口
 
 ## 何时使用
 
-**始终:**
-- 系统复杂度高
-- 需要简化客户端接口
-- 子系统独立性强
-- 需要分层建筑
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-**触发短语:**
-- "系统太复杂"
-- "需要简化接口"
-- "需要统一入口"
-- "子系统解耦"
+## 基本结构
 
-## 外观模式的优缺点
+### 参与者
 
-### 优点 ✅
-- 简化客户端代码
-- 降低系统复杂度
-- 解耦客户端和子系统
-- 提供统一入口
-
-### 缺点 ❌
-- 可能过度封装
-- 隐藏子系统细节
-- 不支持细粒度控制
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
 
 ## 实现方式
 
-### 银行转账系统
+### 方法1: 基础实现
 ```java
-public class BankFacade {
-    private AccountService accountService;
-    private FeeService feeService;
-    private NotificationService notificationService;
-    
-    public boolean transfer(String from, String to, double amount) {
-        if (!accountService.validateAccount(from)) {
-            return false;
-        }
-        double fee = feeService.calculateFee(amount);
-        accountService.debit(from, amount + fee);
-        accountService.credit(to, amount);
-        notificationService.notify(from, to, amount);
-        return true;
-    }
-}
+// Java 代码示例
 ```
 
-## 典型应用场景
-
-### 1. 音乐播放系统
+### 方法2: 高级实现
 ```java
-public class HomeTheaterFacade {
-    private Projector projector;
-    private SoundSystem soundSystem;
-    private PlayerApplication application;
-    
-    public void watchMovie(String movie) {
-        projector.on();
-        soundSystem.on();
-        application.play(movie);
-    }
-    
-    public void stopMovie() {
-        projector.off();
-        soundSystem.off();
-        application.stop();
-    }
-}
+// Java 高级示例
 ```
 
-### 2. 数据库操作
-```java
-public class DatabaseFacade {
-    public void saveEntity(Entity entity) {
-        // 数据验证
-        // 数据转换
-        // 数据持久化
-        // 缓存更新
-        // 事件发送
-    }
-}
-```
+## 完美的使用场景
 
-### 3. Spring 框架
-```java
-// ResourceLoaderFacade 统一资源加载
-Resource resource = new ClassPathResource("config.properties");
-```
+### 场景1: 实际应用
+...
+
+### 场景2: 真实项目
+...
+
+## 4个常见问题
+
+### 问题1
+解决方案...
+
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
 
 ## 最佳实践
 
-1. ✅ 外观本身不实现逻辑
-2. ✅ 提供简洁的 API
-3. ✅ 支持灵活访问子系统
-4. ✅ 文档清晰说明职责
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
 
 ## 何时避免使用
 
-- 客户端需要细粒度控制
-- 子系统只有一个
-- 系统相对简单
+- ❌ 场景1
+- ❌ 场景2

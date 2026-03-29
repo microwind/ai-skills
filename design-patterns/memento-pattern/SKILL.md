@@ -1,119 +1,73 @@
 ---
-name: 备忘录模式
-description: "保存和恢复对象状态。在需要实现撤销/恢复时使用。"
+name: Memento
+description: "不违反封装的前提下，捕获一个对象的内部状态"
 license: MIT
 ---
 
-# 备忘录模式 (Memento Pattern)
+# Memento Pattern (Memento Memento)
 
-## 概述
+## 核心概念
 
-备忘录模式在不破坏封装的前提下，捕获并外部化对象的内部状态，允许后来恢复到该状态。
+**Memento**是一种Behavioral设计模式。
 
-**核心原则**: 保存状态，无需暴露细节。
+不违反封装的前提下，捕获一个对象的内部状态
 
 ## 何时使用
 
-**始终:**
-- 实现撤销/重做
-- 保存对象快照
-- 时间旅行功能
-- 版本控制
-- 事务回滚
+- 触发短语1
+- 触发短语2
+- 触发短语3
 
-**触发短语:**
-- "撤销/重做"
-- "保存状态"
-- "版本控制"
-- "快照"
+## 基本结构
 
-## 备忘录的优缺点
+### 参与者
 
-### 优点 ✅
-- 保存对象状态
-- 不破坏封装
-- 支持撤销/重做
-- 版本管理
-
-### 缺点 ❌
-- 内存开销大
-- 复制成本高
-- 需要额外存储
+1. **参与者1** - 角色描述
+2. **参与者2** - 角色描述
+3. **参与者3** - 角色描述
 
 ## 实现方式
 
-### 对象版本管理
+### 方法1: 基础实现
 ```java
-public class Memento {
-    private final String state;
-    
-    public Memento(String state) {
-        this.state = state;
-    }
-    
-    public String getState() {
-        return state;
-    }
-}
-
-public class Editor {
-    private String text;
-    
-    public void setText(String text) {
-        this.text = text;
-    }
-    
-    public Memento save() {
-        return new Memento(text);
-    }
-    
-    public void restore(Memento memento) {
-        text = memento.getState();
-    }
-}
-
-public class EditorHistory {
-    private Stack<Memento> history = new Stack<>();
-    
-    public void save(Editor editor) {
-        history.push(editor.save());
-    }
-    
-    public void undo(Editor editor) {
-        if (!history.isEmpty()) {
-            editor.restore(history.pop());
-        }
-    }
-}
+// Java 代码示例
 ```
 
-## 典型应用场景
+### 方法2: 高级实现
+```java
+// Java 高级示例
+```
 
-### 1. 文本编辑器
-- 自动保存版本
-- 撤销/重做
+## 完美的使用场景
 
-### 2. 游戏存档
-- 游戏进度保存
-- 加载存档
+### 场景1: 实际应用
+...
 
-### 3. 数据库事务
-- 事务回滚
-- 恢复点
+### 场景2: 真实项目
+...
 
-### 4. 配置管理
-- 配置版本
-- 回滚到上一版本
+## 4个常见问题
+
+### 问题1
+解决方案...
+
+### 问题2
+解决方案...
+
+## 与其他模式的关系
+
+| 模式 | 关系 | 何时结合 |
+|--------|------|---------|
+| 模式A | 相关性 | 条件 |
+| 模式B | 相关性 | 条件 |
 
 ## 最佳实践
 
-1. ✅ Memento 不暴露内部状态
-2. ✅ 使用 Caretaker 管理历史
-3. ✅ 考虑内存影响
-4. ✅ 支持序列化
+1. ✅ 实践1
+2. ✅ 实践2
+3. ✅ 实践3
 
 ## 何时避免使用
 
-- 对象状态很大
-- 频繁保存状态
-- 内存受限
+- ❌ 场景1
+- ❌ 场景2
