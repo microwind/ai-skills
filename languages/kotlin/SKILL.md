@@ -1,924 +1,272 @@
 ---
-name: Kotlin编程
-description: "当使用Kotlin编程时，分析协程编程，优化Android开发，解决类型安全问题。验证架构设计，构建现代应用，和最佳实践。"
+name: Kotlin 代码分析与架构设计大师
+description: "全面涵盖 Kotlin 协程调度瓶颈、Null Safety 陷阱、序列操作性能优化与 Android/Ktor 架构指南。配置深度的 Kotlin 静态扫描检测最佳实践。"
 license: MIT
 ---
 
-# Kotlin编程技能
+# Kotlin 静态代码分析与现代化架构
 
 ## 概述
-Kotlin是一门现代的静态类型编程语言，运行在JVM上，与Java完全兼容。Kotlin以其简洁性、安全性、互操作性而著称，特别适合Android开发、后端服务、数据科学等领域。Kotlin通过空安全、协程、扩展函数等特性显著提升了开发效率。不当的Kotlin使用会导致性能问题、协程滥用、代码复杂。
+Kotlin 是一门多范式编程语言，设计初衷是提供比 Java 更加安全、更加语法的体验，同时保持百分之百的 Java 互操作性。它的两大杀器：**空安全 (Null Safety)** 与 **协程 (Coroutines)**，彻底改变了 JVM 及 Android 的异步编程格局。
 
-**核心原则**: 好的Kotlin代码应该简洁安全、表达力强、性能优良、可维护性好。坏的Kotlin代码会过度简化、协程滥用、类型不安全。
+尽管 Kotlin 大幅削减了 Java 中的样板代码 (Boilerplate) 并能在编译阶段抓住 NPE（空指针异常），但随着复杂特性（如作用域函数 `let/apply/also`、Flow 数据流、高阶函数、委托）的引入，也催生出大量不易察觉的反模式。比如滥用非空断言 `!!`、全局协程泄漏，或者是过度内联导致字节码暴涨。
+
+**核心原则**: 避免生搬硬套 Java 思维，写出正宗的 "Idiomatic Kotlin"；警惕协程上下文切换引发的性能损耗并在业务中正确传播协程作用域。
 
 ## 何时使用
 
 **始终:**
-- 开发Android应用时
-- 构建现代后端服务时
-- 需要与Java互操作时
-- 开发多平台应用时
-- 构建数据科学工具时
-- 需要协程编程时
+- 开发基于 Jetpack Compose 的现代化 Android 应用程序。
+- 构建 Spring Boot 或 Ktor 后端高并发响应式服务。
+- 进行跨平台框架 Kotlin Multiplatform (KMP) 开发（iOS + Android + Web）。
+- 重构遗留的 Java 项目，进行混合双语编程及转换。
+- 利用 Detekt 或 Ktlint 约束团队代码质量规范。
 
 **触发短语:**
-- "Kotlin协程怎么用？"
-- "Kotlin空安全机制"
-- "Android Kotlin最佳实践"
-- "Kotlin扩展函数应用"
-- "Kotlin DSL设计"
-- "Kotlin性能优化"
+- "如何避免使用 GlobalScope 或 runBlocking 引发主线程卡死？"
+- "如何优化这组高阶函数的性能（inline 关键字用法）？"
+- "Kotlin 中的 Flow 和 Channel 有什么区别，如何选型？"
+- "推荐一份 Detekt 和 Ktlint 的配置检查清单。"
+- "什么时候该用 apply、also、let、run、with？"
+- "帮我将这段 Java 的嵌套 if-else 重写为优雅的 Kotlin when 表达式。"
 
-## Kotlin编程技能功能
+## Kotlin 专项分析机制
 
-### 基础语法
-- 变量和函数
-- 类和对象
-- 继承和接口
-- 泛型编程
-- 空安全机制
+### 协程陷阱与生命周期 (Coroutines Profiling)
+- **挂起泄漏检查**: 检测在诸如 Android Activity/Fragment 或 Spring Request 中不经绑定的 `GlobalScope.launch`。
+- **调度器死锁**: 在 UI 阶段硬编码 `withContext(Dispatchers.Main)` 或使用了阻塞系统的 `runBlocking` 引发无响应 (ANR)
+- **取消机制链 (Cancellation Propagation)**: 未能正确抛出 `CancellationException` 或使用了 `try-catch(Exception)` 阻断了协程树的级联取消。
 
-### 高级特性
-- 协程编程
-- 扩展函数
-- 高阶函数
-- DSL构建
-- 操作符重载
+### 安全控制与惯用语法 (Safety & Idioms)
+- **NPE 探测**: 排查对可空受体强行执行 `!!` 导致的运行期空指针崩溃。
+- **集合的滥用**: 序列 (Sequence) 与传统 Iterable 在海量数据链式调用时的性能差异提示。
+- **可变性约束**: 检查不必要的 `var` 或 `MutableList`，推荐使用不变结构 `val` 与 `List<T>` 保证状态安全。
 
-### Android开发
-- Activity和Fragment
-- ViewModel和LiveData
-- Room数据库
-- Retrofit网络请求
-- Jetpack Compose
+### 扩展与面向对象漏洞 (Object & Extension)
+- **扩展地狱**: 分析项目中无章法的顶级扩展函数是否污染了全局命名空间。
+- **伴生开销 (Companion Object)**: 在简单的 Java 单例桥接时过度使用伴生对象，引发运行时类加载性能下降（应尽可能使用顶层函数）。
 
-### 后端开发
-- Spring Boot集成
-- Ktor框架
-- 数据库操作
-- REST API开发
-- 微服务架构
+## 常见 Kotlin 性能与逻辑漏洞
 
-## 常见问题
-
-### 协程问题
-- **问题**: 协程泄漏
-- **原因**: 不正确的协程作用域管理
-- **解决**: 使用CoroutineScope，合理管理生命周期
-
-- **问题**: 主线程阻塞
-- **原因**: 在主线程执行耗时操作
-- **解决**: 使用withContext切换线程
-
-### 空安全问题
-- **问题**: NullPointerException
-- **原因**: 不正确的空值处理
-- **解决**: 使用安全调用操作符和Elvis操作符
-
-### 性能问题
-- **问题**: 过度创建对象
-- **原因**: 不理解Kotlin的对象创建机制
-- **解决**: 使用对象声明、伴生对象
-
-### 互操作问题
-- **问题**: Java和Kotlin类型转换
-- **原因**: 平台类型处理不当
-- **解决**: 正确处理平台类型，添加类型注解
-
-## 代码示例
-
-### 基础语法和类型
+### 1. 协程作用域失控 (Coroutine Scope Leak)
 ```kotlin
-// 变量声明
-val immutable: String = "不可变变量"
-var mutable: Int = 42
+问题:
+使用系统全局级别的协程去执行耗时或者轮询任务，如果不显式存储 Job 句柄，它永远不会被取消，最终导致内存泄漏与无止境后台消耗。
 
-// 类型推断
-val inferred = "自动推断类型"
-var number = 100
-
-// 空安全
-val nullable: String? = "可以为null"
-val nonNull: String = "不能为null"
-
-// 安全调用
-val length = nullable?.length
-
-// Elvis操作符
-val result = nullable?.length ?: 0
-
-// 强制非空（谨慎使用）
-val forcedLength = nullable!!.length
-
-// 函数定义
-fun greet(name: String): String {
-    return "Hello, $name"
-}
-
-// 表达式函数
-fun add(a: Int, b: Int) = a + b
-
-// 默认参数
-fun createPerson(name: String, age: Int = 18): Person {
-    return Person(name, age)
-}
-
-// 命名参数
-val person = createPerson(name = "Alice", age = 25)
-
-// 可变参数
-fun printAll(vararg items: String) {
-    for (item in items) {
-        println(item)
-    }
-}
-
-// 数据类
-data class Person(
-    val name: String,
-    val age: Int,
-    val email: String? = null
-)
-
-// 密封类
-sealed class Result {
-    data class Success(val data: String) : Result()
-    data class Error(val message: String) : Result()
-    object Loading : Result()
-}
-
-// 枚举类
-enum class Color(val rgb: Int) {
-    RED(0xFF0000),
-    GREEN(0x00FF00),
-    BLUE(0x0000FF)
-}
-
-// 对象声明（单例）
-object Database {
-    fun connect(): Boolean {
-        println("连接数据库")
-        return true
-    }
-}
-
-// 伴生对象
-class MathUtils {
-    companion object {
-        const val PI = 3.14159
-        
-        fun circleArea(radius: Double): Double {
-            return PI * radius * radius
-        }
-    }
-}
-```
-
-### 面向对象编程
-```kotlin
-// 基础类
-open class Animal(val name: String) {
-    open fun makeSound() {
-        println("$name makes a sound")
-    }
-    
-    fun eat() {
-        println("$name is eating")
-    }
-}
-
-// 继承
-class Dog(name: String, val breed: String) : Animal(name) {
-    override fun makeSound() {
-        println("$name barks")
-    }
-    
-    fun fetch() {
-        println("$name is fetching")
-    }
-}
-
-// 接口
-interface Drawable {
-    fun draw()
-    fun getArea(): Double
-}
-
-interface Movable {
-    fun move(dx: Double, dy: Double)
-}
-
-// 多重继承
-class Circle(private val radius: Double, private var x: Double, private var y: Double) 
-    : Drawable, Movable {
-    
-    override fun draw() {
-        println("Drawing circle at ($x, $y) with radius $radius")
-    }
-    
-    override fun getArea(): Double {
-        return Math.PI * radius * radius
-    }
-    
-    override fun move(dx: Double, dy: Double) {
-        x += dx
-        y += dy
-        println("Circle moved to ($x, $y)")
-    }
-}
-
-// 抽象类
-abstract class Shape {
-    abstract fun getArea(): Double
-    abstract fun getPerimeter(): Double
-    
-    fun printInfo() {
-        println("Area: ${getArea()}, Perimeter: ${getPerimeter()}")
-    }
-}
-
-class Rectangle(val width: Double, val height: Double) : Shape() {
-    override fun getArea(): Double = width * height
-    override fun getPerimeter(): Double = 2 * (width + height)
-}
-
-// 泛型类
-class Box<T>(private var item: T) {
-    fun getItem(): T = item
-    fun setItem(item: T) {
-        this.item = item
-    }
-    
-    fun isEmpty(): Boolean = item == null
-}
-
-// 泛型约束
-class Container<T : Number>(private val items: List<T>) {
-    fun sum(): Double {
-        return items.sumOf { it.toDouble() }
-    }
-    
-    fun average(): Double {
-        return if (items.isNotEmpty()) sum() / items.size else 0.0
-    }
-}
-
-// 委托
-interface Printer {
-    fun print(message: String)
-}
-
-class ConsolePrinter : Printer {
-    override fun print(message: String) {
-        println(message)
-    }
-}
-
-class LoggerPrinter(private val printer: Printer) : Printer by printer {
-    override fun print(message: String) {
-        println("Logging: $message")
-        printer.print(message)
-    }
-}
-```
-
-### 函数式编程
-```kotlin
-// 高阶函数
-fun calculate(a: Int, b: Int, operation: (Int, Int) -> Int): Int {
-    return operation(a, b)
-}
-
-// 使用lambda表达式
-val sum = calculate(10, 5) { x, y -> x + y }
-val product = calculate(10, 5) { x, y -> x * y }
-
-// 函数引用
-fun multiply(a: Int, b: Int) = a * b
-val result = calculate(10, 5, ::multiply)
-
-// 集合操作
-data class Product(val name: String, val price: Double, val category: String)
-
-val products = listOf(
-    Product("Laptop", 999.99, "Electronics"),
-    Product("Book", 29.99, "Books"),
-    Product("Phone", 699.99, "Electronics"),
-    Product("Pen", 1.99, "Stationery")
-)
-
-// filter和map
-val electronics = products
-    .filter { it.category == "Electronics" }
-    .map { it.name }
-
-// reduce
-val totalPrice = products
-    .filter { it.category == "Electronics" }
-    .map { it.price }
-    .reduce { acc, price -> acc + price }
-
-// groupBy
-val productsByCategory = products.groupBy { it.category }
-
-// sortedBy
-val sortedByPrice = products.sortedBy { it.price }
-
-// 扩展函数
-fun String.isEmail(): Boolean {
-    return this.contains("@") && this.contains(".")
-}
-
-fun List<Product>.findMostExpensive(): Product? {
-    return this.maxByOrNull { it.price }
-}
-
-// 使用扩展函数
-val email = "test@example.com"
-val isValidEmail = email.isEmail()
-
-val mostExpensive = products.findMostExpensive()
-
-// 作用域函数
-// let
-val nameLength = products.first().name.let { name ->
-    println("Processing name: $name")
-    name.length
-}
-
-// run
-val productInfo = products.first().run {
-    println("Processing product: $name")
-    "Product: $name, Price: $price"
-}
-
-// with
-with(products.first()) {
-    println("Product: $name")
-    println("Category: $category")
-}
-
-// apply
-val newProduct = Product("Tablet", 299.99, "Electronics").apply {
-    println("Created product: $name")
-}
-
-// also
-val processedProduct = products.first().also {
-    println("Processing product: ${it.name}")
-}
-
-// 内联函数
-inline fun <T> measureTime(operation: () -> T): T {
-    val startTime = System.currentTimeMillis()
-    val result = operation()
-    val endTime = System.currentTimeMillis()
-    println("Operation took ${endTime - startTime}ms")
-    return result
-}
-
-// 使用内联函数
-val sumResult = measureTime {
-    (1..1000000).sum()
-}
-```
-
-### 协程编程
-```kotlin
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-
-// 基础协程
-fun basicCoroutine() {
-    // GlobalScope.launch（不推荐在生产代码中使用）
+错误示例:
+fun startPollingData() {
+    // 危险：GlobalScope 生命周期等同于整个应用程序阶段
     GlobalScope.launch {
-        delay(1000)
-        println("Hello from coroutine!")
-    }
-    
-    println("Hello from main thread")
-    Thread.sleep(2000)
-}
-
-// 结构化并发
-fun structuredConcurrency() = runBlocking {
-    launch {
-        delay(1000)
-        println("Task 1 completed")
-    }
-    
-    launch {
-        delay(500)
-        println("Task 2 completed")
-    }
-    
-    println("Main coroutine continues")
-}
-
-// 协程作用域
-class UserRepository {
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    
-    fun fetchUserData(userId: String) {
-        scope.launch {
-            val user = fetchUserFromApi(userId)
-            println("User: $user")
-        }
-    }
-    
-    fun cleanup() {
-        scope.cancel()
-    }
-    
-    private suspend fun fetchUserFromApi(userId: String): String {
-        delay(1000)
-        return "User $userId"
-    }
-}
-
-// async和await
-suspend fun fetchUserDataAsync(): String {
-    val deferred1 = async { fetchUserFromApi("user1") }
-    val deferred2 = async { fetchUserFromApi("user2") }
-    
-    val user1 = deferred1.await()
-    val user2 = deferred2.await()
-    
-    return "$user1, $user2"
-}
-
-// 协程上下文切换
-suspend fun performNetworkOperation(): String {
-    // 切换到IO线程执行网络请求
-    val result = withContext(Dispatchers.IO) {
-        delay(1000)
-        "Network result"
-    }
-    
-    // 切换回主线程更新UI
-    withContext(Dispatchers.Main) {
-        println("Updating UI with: $result")
-    }
-    
-    return result
-}
-
-// Flow使用
-fun createFlow(): Flow<String> = flow {
-    repeat(3) {
-        delay(1000)
-        emit("Item $it")
-    }
-}
-
-fun collectFlow() = runBlocking {
-    createFlow()
-        .map { it.uppercase() }
-        .filter { it.contains("1") || it.contains("2") }
-        .collect { value ->
-            println("Collected: $value")
-        }
-}
-
-// 状态流
-class CounterViewModel {
-    private val _counter = MutableStateFlow(0)
-    val counter: StateFlow<Int> = _counter.asStateFlow()
-    
-    fun increment() {
-        _counter.value++
-    }
-    
-    fun decrement() {
-        _counter.value--
-    }
-}
-
-// 共享流
-fun createSharedFlow(): SharedFlow<String> = flow {
-    repeat(5) {
-        delay(500)
-        emit("Shared item $it")
-    }
-}.shareIn(
-    scope = GlobalScope,
-    started = SharingEagerly,
-    replay = 0
-)
-
-// 协程异常处理
-fun exceptionHandling() = runBlocking {
-    val job = launch {
-        try {
+        while(true) {
             delay(1000)
-            throw RuntimeException("Something went wrong")
-        } catch (e: Exception) {
-            println("Caught exception: ${e.message}")
+            println("Working")
         }
     }
-    
-    job.join()
 }
 
-// 超时处理
-suspend fun withTimeout() {
-    try {
-        withTimeout(1000) {
-            delay(2000)
-            println("This won't be printed")
-        }
-    } catch (e: TimeoutCancellationException) {
-        println("Operation timed out")
-    }
-}
-
-// 协程调度器
-fun dispatchersDemo() = runBlocking {
-    launch(Dispatchers.Default) {
-        println("Running on Default: ${Thread.currentThread().name}")
-    }
-    
-    launch(Dispatchers.IO) {
-        println("Running on IO: ${Thread.currentThread().name}")
-    }
-    
-    launch(Dispatchers.Unconfined) {
-        println("Running on Unconfined: ${Thread.currentThread().name}")
-    }
-}
-```
-
-### Android开发
-```kotlin
-// ViewModel
-class UserViewModel : ViewModel() {
-    private val _users = MutableLiveData<List<User>>()
-    val users: LiveData<List<User>> = _users
-    
-    private val _loading = MutableLiveData<Boolean>()
-    val loading: LiveData<Boolean> = _loading
-    
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
-    
-    fun loadUsers() {
-        viewModelScope.launch {
-            try {
-                _loading.value = true
-                val userList = userRepository.getUsers()
-                _users.value = userList
-            } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _loading.value = false
+解决方案:
+总是将协程与特定的生命周期绑定 (例如 Android 的 viewModelScope, 或后端的一层 CoroutineScope)。
+class PollingManager(private val scope: CoroutineScope) {
+    fun startPollingData() {
+        scope.launch {
+            while(isActive) { // 检查协程存活状态再进行
+                delay(1000)
+                println("Working")
             }
         }
     }
 }
+```
 
-// Repository
-class UserRepository(
-    private val apiService: ApiService,
-    private val userDao: UserDao
-) {
-    suspend fun getUsers(): List<User> {
-        return try {
-            val users = apiService.getUsers()
-            userDao.insertAll(users)
-            users
-        } catch (e: Exception) {
-            userDao.getAllUsers()
-        }
+### 2. 滥用作用域函数降低可读性 (Scope Function Abuse)
+```kotlin
+问题:
+过度嵌套 let, apply, also 等，且不规范隐式实参 (it / this) 与返回值的区别，使得代码成了谁也看不懂的魔法堆砌。
+
+错误示例 (可读性灾难):
+user?.let { u ->
+    u.profile.apply {
+        setup(this.age)
+    }.also {
+        saveToDb(it)
     }
 }
 
-// Room数据库
-@Entity(tableName = "users")
-data class User(
-    @PrimaryKey val id: Int,
-    val name: String,
-    val email: String,
-    val avatar: String?
-)
+解决方案:
+如果超过 2 级嵌套，坚决剥离为普通中间变量调用。
+val nonNullUser = user ?: return
+val profile = nonNullUser.profile
+profile.setup(profile.age)
+saveToDb(profile)
+```
 
-@Dao
-interface UserDao {
-    @Query("SELECT * FROM users")
-    suspend fun getAllUsers(): List<User>
-    
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(users: List<User>)
-    
-    @Query("DELETE FROM users")
-    suspend fun clearAll()
-}
+### 3. 被忽视的内联损失与 Sequence (Inline & Sequence)
+```kotlin
+问题:
+对大量数据进行 map, filter 等高阶函数操作时，标准方法会为每一步操作生成新的中间集合。
 
-@Database(entities = [User::class], version = 1)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun userDao(): UserDao
-}
+错误示例:
+val hugeList = (1..1000000).toList()
+// 会生成多个中转临时 List 占用巨量内存！
+val result = hugeList.filter { it % 2 == 0 }.map { it * 2 }.take(10)
 
-// Retrofit API服务
-interface ApiService {
-    @GET("users")
-    suspend fun getUsers(): List<User>
-    
-    @GET("users/{id}")
-    suspend fun getUser(@Path("id") id: Int): User
-    
-    @POST("users")
-    suspend fun createUser(@Body user: User): User
-}
+解决方案:
+转化为 Sequence 进行懒惰求值（类似 Java Stream）。
+val result = hugeList.asSequence()
+    .filter { it % 2 == 0 }
+    .map { it * 2 }
+    .take(10)
+    .toList()
+```
 
-// 网络请求封装
-class NetworkManager {
-    private val apiService: ApiService
-    
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://api.example.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+## 代码实现示例：Kotlin 静态风险检测扫描引擎
+
+以下为一个基础扫描引擎，解析 Kotlin 代码中的 `!!`，异常协程调度，过度嵌套，以及强制空安全等。
+
+### Python版 Kotlin 架构探查器 (Kotlin-Analyzer)
+
+```python
+import os
+import re
+import json
+
+class KotlinAnalyzer:
+    """
+    轻量级 Kotlin 静态分析器。
+    用于捕获非地道Kotlin写法 (Non-idiomatic)、协程泄露和空安全绕过风险。
+    """
+    def __init__(self):
+        self.issues = []
+        self.metrics = {
+            'lines_of_code': 0,
+            'classes': 0,
+            'data_classes': 0,
+            'extension_functions': 0,
+            'non_null_assertions': 0, # `!!` uses
+            'global_scopes': 0,
+            'run_blockings': 0,
+            'vars_declared': 0
+        }
+
+    def analyze_file(self, filepath: str):
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+                lines = content.split('\n')
+        except Exception as e:
+            return {"file": filepath, "error": str(e), "issues": []}
+
+        self.issues = []
+        for key in self.metrics:
+            self.metrics[key] = 0
+
+        self.metrics['lines_of_code'] = len(lines)
         
-        apiService = retrofit.create(ApiService::class.java)
-    }
-    
-    suspend fun getUsers(): Result<List<User>> {
-        return try {
-            val users = apiService.getUsers()
-            Result.success(users)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-}
+        self._check_safety_and_idioms(lines)
+        self._check_coroutines(lines)
+        self._check_architecture_and_oop(lines)
 
-// Jetpack Compose
-@Composable
-fun UserListScreen(
-    users: List<User>,
-    onUserClick: (User) -> Unit
-) {
-    LazyColumn {
-        items(users) { user ->
-            UserItem(
-                user = user,
-                onClick = { onUserClick(user) }
-            )
+        return {
+            "file": filepath,
+            "issues": self.issues,
+            "metrics": self.metrics
         }
-    }
-}
 
-@Composable
-fun UserItem(
-    user: User,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onClick() },
-        elevation = 4.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = user.avatar,
-                contentDescription = "User avatar",
-                modifier = Modifier.size(48.dp),
-                contentScale = ContentScale.Crop
-            )
+    def _strip_comments(self, line):
+        idx = line.find('//')
+        return line[:idx] if idx != -1 else line
+
+    def _check_safety_and_idioms(self, lines):
+        for idx, line in enumerate(lines, 1):
+            clean = self._strip_comments(line)
             
-            Spacer(modifier = Modifier.width(16.dp))
-            
-            Column {
-                Text(
-                    text = user.name,
-                    style = MaterialTheme.typography.h6
-                )
-                Text(
-                    text = user.email,
-                    style = MaterialTheme.typography.body2,
-                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
-                )
-            }
-        }
-    }
-}
+            # `!!` 绝对空安全破坏
+            if '!!' in clean:
+                self.metrics['non_null_assertions'] += 1
+                self.issues.append({
+                    "type": "safety", "severity": "HIGH",
+                    "message": "使用了不受控的强迫非空断言 `!!`，极易导致运行时 NullPointerException 崩溃。推荐使用 `?.` (安全调用) 或 `?:` (Elvis) 操作符。",
+                    "line": idx
+                })
+                
+            # `var` 过度使用，鼓励 `val`
+            if re.search(r'\bvar\b\s+[a-zA-Z_]', clean):
+                self.metrics['vars_declared'] += 1
 
-// 状态管理
-@Composable
-fun UserListViewModel(
-    viewModel: UserViewModel = viewModel()
-) {
-    val users by viewModel.users.observeAsState(initial = emptyList())
-    val loading by viewModel.loading.observeAsState(initial = false)
-    val error by viewModel.error.observeAsState(initial = null)
-    
-    LaunchedEffect(Unit) {
-        viewModel.loadUsers()
-    }
-    
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            error != null -> {
-                Text(
-                    text = error ?: "Unknown error",
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            else -> {
-                UserListScreen(
-                    users = users,
-                    onUserClick = { user ->
-                        // Handle user click
-                    }
-                )
-            }
-        }
-    }
-}
+    def _check_coroutines(self, lines):
+        for idx, line in enumerate(lines, 1):
+            clean = self._strip_comments(line)
+            
+            if 'GlobalScope.launch' in clean or 'GlobalScope.async' in clean:
+                self.metrics['global_scopes'] += 1
+                self.issues.append({
+                    "type": "concurrency", "severity": "CRITICAL",
+                    "message": "严重泄漏风险：检测到使用 GlobalScope。协程将被挂钟在整个应用的生命周期内，导致内存在 Activity 或模块卸载后仍被后台计算强引用持有。",
+                    "line": idx
+                })
+                
+            if 'runBlocking' in clean:
+                self.metrics['run_blockings'] += 1
+                self.issues.append({
+                    "type": "performance", "severity": "WARNING",
+                    "message": "发现 `runBlocking` 同步阻塞调用。它仅限测试环境与主入口 (main) 桥接使用。在常规业务中它将死锁并卡死宿主线程。",
+                    "line": idx
+                })
+                
+            if 'catch (e: Exception)' in clean or 'catch(e: Exception)' in clean:
+                 self.issues.append({
+                    "type": "concurrency", "severity": "HIGH",
+                    "message": "协程隐秘 BUG：捕获全局 `Exception` 会顺带抓走并吞噬 `CancellationException`。这将导致你的整个协程结构失去取消传导的能力。请捕获特定异常或其他子异常。",
+                    "line": idx
+                })
+
+    def _check_architecture_and_oop(self, lines):
+        for idx, line in enumerate(lines, 1):
+            clean = self._strip_comments(line)
+            
+            if re.search(r'\bclass\b\s+', clean) and 'data' not in clean:
+                self.metrics['classes'] += 1
+            if re.search(r'\bdata\s+class\b', clean):
+                self.metrics['data_classes'] += 1
+                
+            # 匹配形如 fun String.myFunc()
+            if re.search(r'\bfun\s+[A-Z][a-zA-Z0-9_<>]+\.[a-zA-Z0-9_]+\(', clean):
+                self.metrics['extension_functions'] += 1
+
+# 使用入口
+if __name__ == "__main__":
+    import sys
+    analyzer = KotlinAnalyzer()
+    code = sys.stdin.read()
+    print(json.dumps(analyzer.analyze_file("stdin"), indent=2, ensure_ascii=False))
 ```
 
-### DSL构建
+## 企业级工具链与质量验证 (Detekt / Ktlint)
+
+纯靠人肉 Review 找出 Kotlin 中的反模式并不靠谱。应当为项目接入 `Detekt` (深度的静态分析器，类似 Sonar) 和 `Ktlint` (官方代码格式守卫)。
+
+**使用 Gradle 配置 Detekt (build.gradle.kts)**:
 ```kotlin
-// HTML DSL
-class HTML {
-    private val elements = mutableListOf<HTMLElement>()
-    
-    fun head(block: Head.() -> Unit) {
-        val head = Head()
-        head.block()
-        elements.add(head)
-    }
-    
-    fun body(block: Body.() -> Unit) {
-        val body = Body()
-        body.block()
-        elements.add(body)
-    }
-    
-    override fun toString(): String {
-        return elements.joinToString("\n") { it.render() }
-    }
+plugins {
+    id("io.gitlab.arturbosch.detekt") version "1.23.1"
 }
 
-abstract class HTMLElement {
-    private val children = mutableListOf<HTMLElement>()
-    private val attributes = mutableMapOf<String, String>()
-    
-    fun attr(name: String, value: String) {
-        attributes[name] = value
-    }
-    
-    fun <T : HTMLElement> addTag(tag: T, block: T.() -> Unit = {}): T {
-        tag.block()
-        children.add(tag)
-        return tag
-    }
-    
-    fun text(content: String) {
-        children.add(TextNode(content))
-    }
-    
-    abstract fun render(): String
-    
-    protected fun renderChildren(): String {
-        return children.joinToString("") { it.render() }
-    }
-    
-    protected fun renderAttributes(): String {
-        return if (attributes.isNotEmpty()) {
-            attributes.entries.joinToString(" ") { "${it.key}=\"${it.value}\"" }
-                .let { " $it" }
-        } else {
-            ""
-        }
-    }
+detekt {
+    buildUponDefaultConfig = true // 以默认规则为基准
+    allRules = false // 不强行开启所有实验性规则
+    config.setFrom("$projectDir/config/detekt/detekt.yml") // 使用你的自定义排除清单
 }
 
-class Head : HTMLElement() {
-    override fun render(): String {
-        return "<head${renderAttributes()}>${renderChildren()}</head>"
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
     }
-    
-    fun title(content: String) {
-        addTag(Title()) { text(content) }
-    }
-}
-
-class Body : HTMLElement() {
-    override fun render(): String {
-        return "<body${renderAttributes()}>${renderChildren()}</body>"
-    }
-    
-    fun h1(content: String) {
-        addTag(H1()) { text(content) }
-    }
-    
-    fun p(content: String) {
-        addTag(P()) { text(content) }
-    }
-    
-    fun div(block: Div.() -> Unit) {
-        addTag(Div(), block)
-    }
-}
-
-class Title : HTMLElement() {
-    override fun render(): String {
-        return "<title${renderAttributes()}>${renderChildren()}</title>"
-    }
-}
-
-class H1 : HTMLElement() {
-    override fun render(): String {
-        return "<h1${renderAttributes()}>${renderChildren()}</h1>"
-    }
-}
-
-class P : HTMLElement() {
-    override fun render(): String {
-        return "<p${renderAttributes()}>${renderChildren()}</p>"
-    }
-}
-
-class Div : HTMLElement() {
-    override fun render(): String {
-        return "<div${renderAttributes()}>${renderChildren()}</div>"
-    }
-    
-    fun p(content: String) {
-        addTag(P()) { text(content) }
-    }
-}
-
-class TextNode(private val content: String) : HTMLElement() {
-    override fun render(): String = content
-}
-
-// 使用DSL
-fun createHTML(): HTML {
-    return HTML().apply {
-        head {
-            title("My Website")
-        }
-        body {
-            h1("Welcome to My Website")
-            p("This is a paragraph.")
-            div {
-                attr("class", "container")
-                p("Another paragraph inside div.")
-            }
-        }
-    }
-}
-
-// 测试DSL
-fun main() {
-    val html = createHTML()
-    println(html)
 }
 ```
-
-## 最佳实践
-
-### 代码风格
-1. **命名规范**: 使用驼峰命名法，遵循Kotlin命名约定
-2. **不可变性**: 优先使用val而不是var
-3. **空安全**: 充分利用空安全特性，避免NPE
-4. **扩展函数**: 合理使用扩展函数提高代码可读性
-
-### 协程使用
-1. **结构化并发**: 使用CoroutineScope管理协程生命周期
-2. **异常处理**: 正确处理协程异常
-3. **线程切换**: 合理使用withContext切换线程
-4. **取消机制**: 实现协程取消机制
-
-### Android开发
-1. **架构模式**: 使用MVVM架构模式
-2. **依赖注入**: 使用Hilt或Koin进行依赖注入
-3. **状态管理**: 使用LiveData和StateFlow管理状态
-4. **内存泄漏**: 避免内存泄漏，正确管理生命周期
-
-### 性能优化
-1. **对象创建**: 避免不必要的对象创建
-2. **集合操作**: 使用高效的集合操作
-3. **协程优化**: 合理使用协程，避免过度并发
-4. **内存管理**: 及时释放不需要的资源
 
 ## 相关技能
 
-- **c** - C语言编程
-- **cpp** - C++编程
-- **typescript** - TypeScript编程
-- **javascript-es6** - 现代JavaScript
-- **android** - Android开发
+- **java** - 作为 JVM 上的老大哥，Kotlin 在底层直接编译映射成 Java 字节码，深刻理解其互操作性有助于防止平台类型的雷区。
+- **backend** - 构建 Ktor 或者响应式 Spring Boot (WebFlux) 之南。
+- **performance-optimization** - 对移动端 (Android) UI 渲染时间以及冷启动的底层剖析。

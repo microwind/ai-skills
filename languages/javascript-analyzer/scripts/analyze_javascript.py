@@ -2,10 +2,22 @@
 import sys
 import json
 import re
+from typing import TypedDict, List
 
-def analyze_javascript(code_text):
+class ChecksDict(TypedDict):
+    has_async_await: bool
+    has_error_handling: bool
+    has_comments: bool
+    uses_const_let: bool
+
+class ResultDict(TypedDict):
+    issues: List[str]
+    patterns: List[str]
+    checks: ChecksDict
+
+def analyze_javascript(code_text: str) -> ResultDict:
     """Analyze JavaScript code"""
-    result = {
+    result: ResultDict = {
         'issues': [],
         'patterns': [],
         'checks': {

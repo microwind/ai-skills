@@ -2,10 +2,23 @@
 import sys
 import json
 import re
+from typing import TypedDict, List
 
-def analyze_python(code_text):
+class Metrics(TypedDict):
+    has_type_hints: bool
+    has_docstrings: bool
+    has_error_handling: bool
+    functions_count: int
+
+class AnalysisResult(TypedDict):
+    valid: bool
+    issues: List[str]
+    patterns: List[str]
+    metrics: Metrics
+
+def analyze_python(code_text: str) -> AnalysisResult:
     """Analyze Python code"""
-    result = {
+    result: AnalysisResult = {
         'valid': False,
         'issues': [],
         'patterns': [],

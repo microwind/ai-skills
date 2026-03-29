@@ -2,10 +2,18 @@
 import sys
 import json
 import re
+from typing import TypedDict, List
 
-def analyze_bundle(manifest_text):
+class AnalysisResult(TypedDict):
+    total_size_estimate: int
+    issues: List[str]
+    optimizations: List[str]
+    splits_found: int
+    large_modules: List[str]
+
+def analyze_bundle(manifest_text: str) -> AnalysisResult:
     """Analyze bundle"""
-    result = {
+    result: AnalysisResult = {
         'total_size_estimate': 0,
         'issues': [],
         'optimizations': [],

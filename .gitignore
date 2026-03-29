@@ -8,6 +8,7 @@ target/
 # tools config
 .idea
 .vscode
+.keep
 
 # MAC
 .DS_Store
