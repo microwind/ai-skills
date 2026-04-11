@@ -2,7 +2,7 @@
 
 > 前两天与朋友老王和老张聊天，一起讨论了关于AI目前发展的问题。其中主要讨论了3个问题，现在总结如下。
 
-![AI核心问题讨论](../docs/images/ai-issues-discuss.png)
+![AI核心问题讨论](https://pica.zhimg.com/v2-5ba2685b73ec137185021ebde01c3730_1440w.jpg)
 
 ## 核心讨论
 
