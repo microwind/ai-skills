@@ -1,1 +1,1011 @@
-这是首页
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI编程Skills知识库 | MicroWind · AI 技能</title>
+    <link rel="icon" href="https://avatars.githubusercontent.com/u/67299763?s=200&v=4" type="image/png">
+    <style>
+        :root {
+            --primary-green: #1f883d;
+            --light-green: #4ade80;
+            --accent-orange: #FF6600;
+            --bg-light: #f0fdf4;
+            --bg-dark: #ffffff;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --gradient-primary: linear-gradient(135deg, #1f883d 0%, #4ade80 100%);
+            --gradient-bg: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #f8fafc 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gradient-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(31, 136, 61, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(74, 222, 128, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(255, 102, 0, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-top: 5px;
+            margin-right: 1rem;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary-green);
+            transform: translateX(-50%);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-green);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-links a.active {
+            color: var(--primary-green);
+        }
+
+        .nav-links a.active::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 3rem 0;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(31, 136, 61, 0.08) 0%, rgba(74, 222, 128, 0.08) 100%);
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(31, 136, 61, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.1; }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+            text-shadow: 0 2px 4px rgba(31, 136, 61, 0.1);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .hero-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .hero-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #21883e;
+            border-radius: 50px;
+            color: #21883e;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .hero-links a:hover {
+            color: var(--primary-green);
+            border-color: var(--primary-green);
+            background: rgba(33, 136, 62, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 1.5rem 0;
+        }
+
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.8rem;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: var(--gradient-primary);
+            border-radius: 2px;
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 2rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 2rem 0;
+        }
+
+        .content-section h2 {
+            font-size: 1.8rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .content-section h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin: 2rem 0 1rem;
+        }
+
+        .content-section p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+
+        .content-section ul {
+            margin-left: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .content-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: rgba(31, 136, 61, 0.05);
+            font-weight: 600;
+            color: var(--primary-green);
+        }
+
+        tr:hover {
+            background: rgba(31, 136, 61, 0.03);
+        }
+
+        table a {
+            color: var(--primary-green);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        table a:hover {
+            text-decoration: underline;
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -5px rgba(31, 136, 61, 0.15);
+            border-color: var(--primary-green);
+        }
+
+        .card h3 {
+            color: var(--primary-green);
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        /* Feature Grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -5px rgba(31, 136, 61, 0.15);
+            border-color: var(--primary-green);
+        }
+
+        .feature-card h4 {
+            color: var(--primary-green);
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Link Styles */
+        a {
+            color: var(--primary-green);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--accent-orange);
+        }
+
+        /* Inline Icons */
+        .icon-github {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            position: relative;
+        }
+        
+        .icon-github::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: currentColor;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z'/%3E%3C/svg%3E") no-repeat center;
+            mask-size: contain;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z'/%3E%3C/svg%3E") no-repeat center;
+            -webkit-mask-size: contain;
+        }
+        
+        .github-link {
+            color: var(--primary-green);
+            text-decoration: none;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .github-link:hover {
+            color: #21883e;
+            background: rgba(31, 136, 61, 0.1);
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            background: white;
+            border-top: 1px solid var(--border-color);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-green);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary-green);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .hero {
+                padding: 2rem 0;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .hero-badge {
+                font-size: 0.8rem;
+                padding: 0.4rem 1rem;
+            }
+
+            .nav-links {
+                display: none;
+                position: fixed;
+                top: 80px;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 2rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                transform: translateY(-100%);
+                transition: transform 0.3s ease;
+                z-index: 99;
+            }
+            
+            .nav-links.active {
+                display: flex;
+                transform: translateY(0);
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.75rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="logo-section">
+                <a href="https://microwind.github.io"><img class="logo" src="https://avatars.githubusercontent.com/u/67299763?s=200&v=4" alt="MicroWind Logo" /></a>
+                <div class="brand-name"><a href="https://microwind.github.io">MicroWind</a> · <a href="https://microwind.github.io/ai-skills">AI Skills</a></div>
+            </div>
+            <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <span>☰</span>
+            </button>
+            <div class="nav-links">
+                <a href="https://microwind.github.io">首页</a>
+                <a href="#why-learn">为什么学习</a>
+                <a href="#quick-start">快速开始</a>
+                <a href="#skills-map">内容地图</a>
+                <a href="https://github.com/microwind/ai-skills" rel="noopener noreferrer" class="github-link" title="GitHub">
+                    <span class="icon-github"></span>
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="hero-badge">AI时代编程技能核心库</div>
+                    <h1>AI编程Skills知识库</h1>
+                    <div class="hero-subtitle">
+                        利用AI来学习编程技术，让AI更好地替你打工
+                    </div>
+                    <div class="hero-links">
+                        <a href="#why-learn">为什么学习</a>
+                        <a href="#quick-start">快速开始</a>
+                        <a href="#skills-map">内容地图</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="why-learn" class="section" style="padding-top: 3rem;">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">为什么学习这个库？</h2>
+                    <p class="section-subtitle">在AI时代，会用AI的程序员效率提升10倍！<br>这个知识库为你提供实战导向的AI编程技能，帮助程序员学习各类编程技能，快速构建工程系统。</p>
+                </div>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>96+实用技能</h4>
+                        <p>涵盖后端、前端、框架、云原生、系统设计、数据库、DevOps、代码质量、编程语言、工具等10大分类</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>实战导向</h4>
+                        <p>每个技能都可直接应用到项目中，即学即用</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>AI驱动</h4>
+                        <p>利用AI快速学习和掌握编程技能，提升效率</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>中文友好</h4>
+                        <p>完全中文文档，降低学习门槛</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>多语言示例</h4>
+                        <p>Python、JavaScript、Go、Java、TypeScript、Rust等多种语言示例</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>持续更新</h4>
+                        <p>跟随技术发展不断扩展，保持内容新鲜</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="quick-start" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">快速开始（3分钟上手）</h2>
+                    <p class="section-subtitle">5个循序渐进的学习步骤，帮助你系统地掌握AI编程技能</p>
+                </div>
+
+                <div class="card">
+                    <h3>5步学习路线</h3>
+                    <div style="display: flex; flex-direction: row; gap: 1rem; overflow-x: auto; padding-bottom: 1rem;">
+                        <div class="step-card" style="text-align: center; padding: 1.5rem; background: rgba(31, 136, 61, 0.05); border-radius: 12px; border: 1px solid rgba(31, 136, 61, 0.1); min-width: 200px; flex: 1; transition: all 0.3s ease;">
+                            <strong>第1步：后端开发</strong><br>
+                            <a href="https://github.com/microwind/ai-skills/tree/main/backend/" style="display: inline-block; padding: 0.5rem 1.5rem; background: var(--primary-green); color: white; border-radius: 50px; text-decoration: none; margin: 0.5rem 0; font-size: 0.9rem; transition: all 0.3s ease;">后端技能</a>
+                            <p style="margin: 0.5rem 0; font-size: 0.9rem;">学习RESTful API、JWT认证、缓存策略等后端核心技能。</p>
+                        </div>
+                        
+                        <div class="step-card" style="text-align: center; padding: 1.5rem; background: rgba(31, 136, 61, 0.05); border-radius: 12px; border: 1px solid rgba(31, 136, 61, 0.1); min-width: 200px; flex: 1; transition: all 0.3s ease;">
+                            <strong>第2步：前端开发</strong><br>
+                            <a href="https://github.com/microwind/ai-skills/tree/main/frontend/" style="display: inline-block; padding: 0.5rem 1.5rem; background: var(--primary-green); color: white; border-radius: 50px; text-decoration: none; margin: 0.5rem 0; font-size: 0.9rem; transition: all 0.3s ease;">前端技能</a>
+                            <p style="margin: 0.5rem 0; font-size: 0.9rem;">掌握React组件、状态管理、性能优化等前端开发技能。</p>
+                        </div>
+                        
+                        <div class="step-card" style="text-align: center; padding: 1.5rem; background: rgba(31, 136, 61, 0.05); border-radius: 12px; border: 1px solid rgba(31, 136, 61, 0.1); min-width: 200px; flex: 1; transition: all 0.3s ease;">
+                            <strong>第3步：框架生态</strong><br>
+                            <a href="https://github.com/microwind/ai-skills/tree/main/frameworks/" style="display: inline-block; padding: 0.5rem 1.5rem; background: var(--primary-green); color: white; border-radius: 50px; text-decoration: none; margin: 0.5rem 0; font-size: 0.9rem; transition: all 0.3s ease;">框架技能</a>
+                            <p style="margin: 0.5rem 0; font-size: 0.9rem;">学习Django、FastAPI、Spring Boot、Express等主流框架。</p>
+                        </div>
+                        
+                        <div class="step-card" style="text-align: center; padding: 1.5rem; background: rgba(31, 136, 61, 0.05); border-radius: 12px; border: 1px solid rgba(31, 136, 61, 0.1); min-width: 200px; flex: 1; transition: all 0.3s ease;">
+                            <strong>第4步：云原生</strong><br>
+                            <a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/" style="display: inline-block; padding: 0.5rem 1.5rem; background: var(--primary-green); color: white; border-radius: 50px; text-decoration: none; margin: 0.5rem 0; font-size: 0.9rem; transition: all 0.3s ease;">云原生技能</a>
+                            <p style="margin: 0.5rem 0; font-size: 0.9rem;">掌握Docker、Kubernetes、无服务器函数等云原生技术。</p>
+                        </div>
+                        
+                        <div class="step-card" style="text-align: center; padding: 1.5rem; background: rgba(31, 136, 61, 0.05); border-radius: 12px; border: 1px solid rgba(31, 136, 61, 0.1); min-width: 200px; flex: 1; transition: all 0.3s ease;">
+                            <strong>第5步：系统设计</strong><br>
+                            <a href="https://github.com/microwind/ai-skills/tree/main/system-design/" style="display: inline-block; padding: 0.5rem 1.5rem; background: var(--primary-green); color: white; border-radius: 50px; text-decoration: none; margin: 0.5rem 0; font-size: 0.9rem; transition: all 0.3s ease;">系统设计</a>
+                            <p style="margin: 0.5rem 0; font-size: 0.9rem;">学习高并发、分布式、缓存策略等系统设计技能。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills-map" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">学习内容地图</h2>
+                    <p class="section-subtitle">从基础到进阶，系统化学习AI编程技能</p>
+                </div>
+
+                <div class="card">
+                    <h3>后端开发（12个技能）</h3>
+                    <p>构建高质量后端服务的核心技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>RESTful API设计</strong></td><td>设计和实现高质量的RESTful Web API接口</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/restful-api-design/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>JWT认证实现</strong></td><td>使用JWT实现安全的令牌认证系统</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/jwt-authentication/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>错误处理与日志</strong></td><td>建立完善的错误处理机制和日志管理系统</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/error-handling-logging/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>缓存策略</strong></td><td>多层缓存设计和性能优化技术</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/caching-strategies/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>异步任务</strong></td><td>使用Celery、Bull等实现异步任务处理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/async-tasks/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>数据验证</strong></td><td>输入数据验证和序列化处理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/data-validation/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>GraphQL API</strong></td><td>现代化GraphQL API查询语言开发实践</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/graphql-api/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>文件上传处理</strong></td><td>安全的文件上传管理系统</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/file-upload/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>API验证器</strong></td><td>API接口质量检查和验证工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/api-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>查询分析器</strong></td><td>SQL查询性能分析和优化工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/database-query-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>请求调试器</strong></td><td>HTTP请求调试和分析工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/backend/request-debugger/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>前端开发（9个技能）</h3>
+                    <p>构建现代化前端应用的核心技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>React组件</strong></td><td>React函数式组件设计和性能优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/react-components/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>状态管理</strong></td><td>使用Redux、Context等实现前端状态管理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/state-management/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>性能优化</strong></td><td>渲染优化、代码分割等性能提升技术</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/performance-optimization/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>响应式设计</strong></td><td>移动端适配和响应式网页布局</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/responsive-design/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>表单处理</strong></td><td>前端表单库使用和验证方案</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/form-handling/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>前端测试</strong></td><td>使用Jest、Vitest等工具进行测试</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/testing-frontend/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>打包分析器</strong></td><td>前端资源打包分析和优化工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/bundle-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>组件分析器</strong></td><td>React组件性能分析和优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/component-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>CSS验证器</strong></td><td>CSS代码质量检查和样式优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frontend/css-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>框架与库（8个技能）</h3>
+                    <p>主流Web框架的开发实践：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Django</strong></td><td>Python Web开发完整解决方案</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/django-development/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>FastAPI</strong></td><td>现代Python API框架的高性能开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/fastapi-setup/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Spring Boot</strong></td><td>Java企业级应用快速开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/spring-boot/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Express.js</strong></td><td>Node.js Web框架应用开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/express-js/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>NestJS</strong></td><td>Node.js企业级框架架构设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/nestjs-architecture/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Flask</strong></td><td>微框架快速开发和轻量级应用</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/flask-microframework/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Spring分析器</strong></td><td>Spring项目性能分析和优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/spring-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Flask/Django分析器</strong></td><td>Python框架性能分析和代码质量</td><td><a href="https://github.com/microwind/ai-skills/tree/main/frameworks/flask-django-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>云原生与容器（7个技能）</h3>
+                    <p>现代云原生应用开发技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Docker容器化</strong></td><td>容器基础技术和应用容器化实践</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/docker-containerization/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Kubernetes</strong></td><td>容器编排系统管理和集群部署</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/kubernetes-basics/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>无服务器函数</strong></td><td>FaaS架构和无服务器函数开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/serverless-functions/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>镜像管理</strong></td><td>镜像仓库管理和镜像优化策略</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/container-registry/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>网络策略</strong></td><td>容器网络配置和安全策略管理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/networking-policies/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>云配置分析器</strong></td><td>云原生配置管理和分析工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/cloud-config-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>K8s验证器</strong></td><td>K8s配置检查和集群验证</td><td><a href="https://github.com/microwind/ai-skills/tree/main/cloud-native/kubernetes-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>系统设计（7个技能）</h3>
+                    <p>构建可扩展系统的设计技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>算法顾问</strong></td><td>复杂系统算法选择与优化方案</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/algorithm-advisor/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>高并发系统</strong></td><td>支持高并发访问的系统架构设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/high-concurrency/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>分布式一致性</strong></td><td>分布式事务和一致性保证机制</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/distributed-consistency/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>CAP定理应用</strong></td><td>系统设计权衡和策略选择实践</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/cap-theorem/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>数据库分片</strong></td><td>水平扩展和数据库分片设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/database-sharding/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>缓存失效策略</strong></td><td>缓存管理和失效策略优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/cache-invalidation/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>混合推荐系统</strong></td><td>推荐算法设计和系统架构实现</td><td><a href="https://github.com/microwind/ai-skills/tree/main/system-design/hybrid-recommendation-system/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>数据库（8个技能）</h3>
+                    <p>数据库技术核心技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>SQL优化</strong></td><td>查询性能优化和索引设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/sql-optimization/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>事务管理</strong></td><td>ACID特性实现和隔离级别</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/transaction-management/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>NoSQL应用</strong></td><td>MongoDB、Redis等NoSQL数据库开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/nosql-databases/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>备份与恢复</strong></td><td>数据可靠性和灾难恢复策略</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/backup-recovery/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>连接池管理</strong></td><td>数据库连接优化和性能提升</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/connection-pooling/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>迁移验证器</strong></td><td>数据库迁移检查和版本管理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/migration-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>SQL优化器</strong></td><td>智能SQL优化工具和自动调优</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/sql-optimizer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>查询分析器</strong></td><td>查询性能分析和执行计划优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/database/database-query-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>DevOps（5个技能）</h3>
+                    <p>开发运维自动化技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>CI/CD流水线</strong></td><td>持续集成和部署流水线设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/devops/ci-cd-pipeline/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>基础设施即代码</strong></td><td>IaC实践和基础设施自动化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/devops/infrastructure-as-code/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>基础设施分析器</strong></td><td>基础设施监控分析和性能优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/devops/infrastructure-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>CI/CD验证器</strong></td><td>流水线配置检查和质量验证</td><td><a href="https://github.com/microwind/ai-skills/tree/main/devops/cicd-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>日志聚合系统</strong></td><td>分布式日志收集和分析系统</td><td><a href="https://github.com/microwind/ai-skills/tree/main/devops/log-aggregation/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>代码质量（7个技能）</h3>
+                    <p>提升代码质量的实践技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>代码审查</strong></td><td>代码质量检查流程和审查标准</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/code-review/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>重构模式</strong></td><td>代码重构最佳实践和模式应用</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/refactoring-patterns/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>测试策略</strong></td><td>全面测试方案设计和测试覆盖</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/testing-strategies/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>代码优化</strong></td><td>性能优化方法和代码质量提升</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/code-optimization/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>测试生成器</strong></td><td>自动化测试生成和测试用例设计</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/test-generation/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>性能分析器</strong></td><td>代码性能分析和瓶颈识别</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/performance-profiler/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>文档生成器</strong></td><td>自动文档生成和维护工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/code-quality/documentation-generator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>编程语言（7个技能）</h3>
+                    <p>主流编程语言的高级特性：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>Python高级</strong></td><td>深入Python高级用法和特性</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/python-advanced/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>JavaScript ES6+</strong></td><td>现代JavaScript特性和语法应用</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/javascript-es6/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Go编程模式</strong></td><td>Go语言最佳实践和并发模式</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/golang-patterns/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Rust系统编程</strong></td><td>系统级Rust开发和内存安全</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/rust-systems/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>TypeScript开发</strong></td><td>类型安全的JavaScript开发</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/typescript/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Python分析器</strong></td><td>Python代码分析和质量检查</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/python-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>JavaScript分析器</strong></td><td>JavaScript代码质量分析和优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/languages/javascript-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>工具与脚本（27个技能）</h3>
+                    <p>开发工具和自动化脚本技能：</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>技能</th>
+                                <th>介绍</th>
+                                <th>代码</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td><strong>依赖分析器</strong></td><td>项目依赖管理和版本兼容性</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/dependency-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Dockerfile分析器</strong></td><td>容器配置优化和安全性检查</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/dockerfile-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>环境变量验证器</strong></td><td>环境配置检查和参数验证</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/env-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>文件分析器</strong></td><td>文件结构分析和重复文件检测</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/file-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>安全扫描器</strong></td><td>代码安全漏洞扫描和风险评估</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/security-scanner/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>版本管理器</strong></td><td>版本控制最佳实践和发布管理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/version-manager/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Git工作流</strong></td><td>Git流程管理和分支策略</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/git-workflows/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>API测试器</strong></td><td>API接口测试和自动化验证</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/api-tester/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>代码格式化器</strong></td><td>代码格式统一和风格检查</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/code-formatter/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>包管理器</strong></td><td>依赖包管理和版本控制</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/package-manager/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>正则测试器</strong></td><td>正则表达式测试和调试工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/regex-tester/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>SQL生成器</strong></td><td>智能SQL语句生成和优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/sql-generator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Markdown生成器</strong></td><td>文档自动生成和格式化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/markdown-generator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>变更日志生成器</strong></td><td>自动化版本记录和变更追踪</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/changelog-generator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Markdown验证器</strong></td><td>Markdown文档质量检查</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/markdown-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>JSON验证器</strong></td><td>JSON数据验证和格式化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/json-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>日志分析器</strong></td><td>日志文件分析和错误追踪</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/log-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Git分析器</strong></td><td>Git仓库分析和统计报告</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/git-analysis/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>API文档生成器</strong></td><td>API文档自动生成和维护</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/api-documentation/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>性能监控</strong></td><td>应用性能监控和指标分析</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/performance-monitor/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>密码生成器</strong></td><td>安全密码生成和管理工具</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/password-generator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>端口扫描器</strong></td><td>网络端口扫描和安全检测</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/port-scanner/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>堆栈跟踪分析器</strong></td><td>错误堆栈分析和问题定位</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/stack-trace-analyzer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>Docker Compose</strong></td><td>容器编排和多容器管理</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/docker-compose/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>图片优化器</strong></td><td>图片压缩和性能优化</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/image-optimizer/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                            <tr><td><strong>YAML验证器</strong></td><td>YAML文件验证和配置检查</td><td><a href="https://github.com/microwind/ai-skills/tree/main/tools/yaml-validator/" style="color: var(--primary-green); font-weight: 600;">查看</a></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="related" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">相关资源</h2>
+                    <p class="section-subtitle">这个项目是《AI时代程序员成长体系》的一部分</p>
+                </div>
+
+                <div class="feature-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="feature-card">
+                        <h4><a href="https://github.com/microwind/algorithms">algorithms</a></h4>
+                        <p>算法思想与数据结构</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><a href="https://github.com/microwind/design-patterns">design-patterns</a></h4>
+                        <p>设计模式与编程思想</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><a href="https://github.com/microwind/ai-skills">ai-skills</a></h4>
+                        <p>AI编程Skill库（本项目）</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4><a href="https://github.com/microwind/ai-prompt">ai-prompt</a></h4>
+                        <p>AI编程提示词库</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>用AI技能驾驭编程，在AI时代闪闪发光</p>
+            <p><em>AI Skills for everyone, in the Age of AI</em></p>
+            <div class="footer-links">
+                <a href="https://github.com/microwind/ai-skills">GitHub</a>
+                <a href="https://github.com/microwind/ai-skills/blob/main/SKILLS_INDEX.md">技能索引</a>
+                <a href="https://github.com/microwind/ai-skills/issues">反馈问题</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMobileMenu() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.classList.toggle('active');
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
