@@ -19,7 +19,7 @@
 - ✅ **代码质量** - 测试、重构、优化
 - ✅ **编程语言** - Java、Python、TypeScript、JavaScript、Go、Rust、C、C++
 
-## 为什么选择 AI Skills？
+## 为什么选择 AI-Skills？
 
 在AI时代，**会用AI的程序员效率提升10倍**！这个知识库为你提供：
 
@@ -28,6 +28,20 @@
 - **中文友好** - 完全中文文档，降低学习门槛
 - **即学即用** - 丰富的代码示例和最佳实践
 - **持续更新** - 跟随技术发展不断扩展
+
+## 如何使用AI-Skills库？
+
+**场景一：当技术手册查**  
+直接在 GitHub 上浏览，看 `README.md`、`SKILL.md` 学习最佳实践，了解对应编程的经验技巧。
+
+**场景二：给 AI 编程助手装上技能（推荐）**  
+克隆仓库，把需要的技能文件夹复制到：
+- 项目级：`your-project/.claude/skills/`（或 `.cursor/skills/` 等）
+- 全局：`~/.claude/skills/`
+支持 Claude、Codex、Gemini、Cursor等工具。
+
+**场景三：手动复制提示词**  
+打开任意 `SKILL.md`，复制里面的指令粘贴给ChatGPT、DeepSeek、豆包等通用 AI，同样能获得高质量输出。
 
 ## Skills 总览
 
