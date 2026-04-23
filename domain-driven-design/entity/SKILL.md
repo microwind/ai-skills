@@ -352,6 +352,85 @@ class Order:
         return hash(self.order_id)
 ```
 
+## 实体的四种"血液模型"
+
+在实际工程中，实体的代码形态可以按**携带业务逻辑的多少**分为四种，选型直接影响领域层的厚度与可维护性。
+
+| 形态 | 包含内容 | 评价 |
+|------|----------|------|
+| **失血模型** | 仅有数据字段和 getter/setter（Java 中的 POJO） | 不算领域对象，只是数据容器 |
+| **贫血模型** | 数据 + 不依赖持久层的业务逻辑；**依赖持久层的业务逻辑放到领域服务**中 | **工程推荐**，平衡可维护性与充血度 |
+| **充血模型** | 数据 + 所有业务逻辑（含依赖持久层的） | 领域对象最"纯"，但与持久层耦合 |
+| **胀血模型** | 数据 + 业务逻辑 + 与业务无关的其他逻辑（事务、授权、日志等） | 应避免，违反单一职责 |
+
+### 对比示例
+
+```java
+// ❌ 失血模型：只有字段，业务逻辑全部外泄
+public class Order {
+    private Long id;
+    private Integer status;
+    private BigDecimal amount;
+    // 50 行 getter/setter ...
+}
+
+public class OrderService {
+    public void pay(Long orderId) {
+        Order o = orderDao.get(orderId);
+        if (o.getStatus() != 0) throw new RuntimeException("状态错误");
+        o.setStatus(1);
+        orderDao.update(o);
+    }
+}
+
+// ✅ 贫血模型：数据 + 核心业务规则，持久化交给仓储
+public class Order {
+    private OrderId id;
+    private OrderStatus status;
+    private Money amount;
+
+    public void pay() {  // 业务规则在实体内
+        if (status != OrderStatus.PENDING) {
+            throw new DomainException("只有待支付订单可以支付");
+        }
+        this.status = OrderStatus.PAID;
+    }
+}
+
+public class OrderAppService {
+    public void pay(OrderId id) {
+        Order order = orderRepo.findById(id);
+        order.pay();             // 调业务方法
+        orderRepo.save(order);   // 持久化由仓储负责
+    }
+}
+
+// 充血模型：持久化也在实体内（少用）
+public class Order {
+    public void pay() {
+        if (status != OrderStatus.PENDING) { ... }
+        this.status = OrderStatus.PAID;
+        OrderRepository.save(this);  // 持久化耦合进实体
+    }
+}
+
+// ❌ 胀血模型：一锅端，权限/事务/日志全塞进来
+public class Order {
+    @Transactional
+    @RequiresPermission("ORDER_PAY")
+    public void pay(User operator) {
+        AuditLog.log("...");    // ← 和业务无关的东西
+        // ...
+    }
+}
+```
+
+**经验建议**：
+
+- **首选贫血模型**：实体带业务规则，但不依赖仓储；仓储由[应用服务](../application-service/)或[领域服务](../domain-service/)调用
+- **实体 + 领域服务 = 完整领域模型**
+- 避免胀血模型：事务、权限、日志等横切关注点属于应用层或 AOP，不属于领域层
+
 ## 与值对象的对比
 
 | 特性 | Entity | Value Object |
