@@ -1,4 +1,4 @@
-# Claude Code Skills 推荐：2026年最值得安装的10个AI工具扩展
+# Claude Code Skills 推荐：2026年最值得安装的10个AI技能
 
 ## 什么是 Claude Code Skills？
 
