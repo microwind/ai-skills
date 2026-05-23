@@ -1,6 +1,6 @@
 # Claude Code AI编程完全指南
 
-> 让AI成为你的开发团队，而不是代码补全工具
+> 把 Claude Code 当成能在终端里读仓库、跑命令、接 MCP 的协作方；它的强项是任务级改动，而不只是单行补全。
 
 ## 目录
 
@@ -33,15 +33,44 @@
 
 - [11 心智模型与持续进化](#11-心智模型与持续进化)
 
+## 怎么读这本书
+
+按目录从前往后读最省事：前三章把工具装起来并跑通一个真实小项目；中间几章把工作流、记忆文件（CLAUDE.md）、对话方式和日常开发场景吃透；再往后是扩展（Skills / Hooks / MCP）、多实例协作和完整产品演练；最后一章把用法收束成可长期迭代的习惯。不必一次读完——读完一章就动手做一章，空档时再接着读，反而印象更深。
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f0f4ff', 'primaryColor': '#c7d2fe', 'primaryTextColor': '#1e1b4b', 'primaryBorderColor': '#6366f1', 'secondaryColor': '#a5b4fc', 'tertiaryColor': '#818cf8', 'lineColor': '#4f46e5', 'fillType0': '#e0e7ff', 'fillType1': '#fce7f3', 'fillType2': '#ccfbf1'}}}%%
+flowchart TB
+    subgraph P1["Part 1 · 起步"]
+        direction LR
+        p1a[01 为何是它] --> p1b[02 安装] --> p1c[03 首个项目]
+    end
+    subgraph P2["Part 2 · 核心"]
+        direction LR
+        p2a[04 工作流] --> p2b[05 CLAUDE.md] --> p2c[06 对话]
+    end
+    subgraph P3["Part 3–4 · 实战与扩展"]
+        direction LR
+        p3a[07 五场景] --> p3b[08 Skills/Hooks/MCP] --> p3c[09 多 Agent]
+    end
+    subgraph P4["Part 5–6 · 收束"]
+        direction LR
+        p4a[10 完整产品] --> p4b[11 心智模型]
+    end
+    P1 --> P2 --> P3 --> P4
+    style P1 fill:#eef2ff,stroke:#6366f1
+    style P2 fill:#fdf2f8,stroke:#db2777
+    style P3 fill:#ecfdf5,stroke:#059669
+    style P4 fill:#fff7ed,stroke:#ea580c
+```
 
 ### 01 为什么是 Claude Code
 
-AI编程工具在三年里变了三次。这个演变路径，决定了Claude Code的独特价值。
+最近两三年，AI 写代码这件事换过几代产品形态；看清这条线，更容易理解 Claude Code 现在站的位置。
 
 #### 三年三次进化
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f3f9ff', 'primaryTextColor': '#0d47a1', 'primaryBorderColor': '#2196f3', 'lineColor': '#42a5f5', 'fillType0': '#e3f2fd', 'fillType1': '#bbdefb', 'fillType2': '#90caf9' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#f0f7ff', 'secondaryColor': '#dbeafe', 'tertiaryColor': '#bfdbfe', 'primaryColor': '#f3f9ff', 'primaryTextColor': '#0d47a1', 'primaryBorderColor': '#2196f3', 'lineColor': '#42a5f5', 'fillType0': '#e3f2fd', 'fillType1': '#bbdefb', 'fillType2': '#90caf9' }}}%%
 timeline
     title AI编程工具演进
     section 2022
@@ -57,7 +86,7 @@ timeline
 #### 角色的根本转变
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#faf5ff', 'primaryTextColor': '#4a148c', 'primaryBorderColor': '#9c27b0', 'lineColor': '#ab47bc', 'fillType0': '#f3e5f5', 'fillType1': '#e1bee7', 'fillType2': '#ce93d8' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#faf5ff', 'secondaryColor': '#f3e8ff', 'tertiaryColor': '#ede9fe', 'primaryColor': '#faf5ff', 'primaryTextColor': '#4a148c', 'primaryBorderColor': '#9c27b0', 'lineColor': '#ab47bc', 'fillType0': '#f3e5f5', 'fillType1': '#e1bee7', 'fillType2': '#ce93d8' }}}%%
 graph LR
     A[2022: Copilot] --> B[2024: Cursor]
     B --> C[2025: Claude Code]
@@ -78,7 +107,7 @@ graph LR
 #### Claude Code vs Cursor：本质差异
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fff3e0', 'primaryTextColor': '#e65100', 'primaryBorderColor': '#ff9800', 'lineColor': '#ffa726', 'fillType0': '#fff8e1', 'fillType1': '#ffecb3', 'fillType2': '#ffe082' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#fff8f0', 'secondaryColor': '#ffedd5', 'tertiaryColor': '#fed7aa', 'primaryColor': '#fff3e0', 'primaryTextColor': '#e65100', 'primaryBorderColor': '#ff9800', 'lineColor': '#ffa726', 'fillType0': '#fff8e1', 'fillType1': '#ffecb3', 'fillType2': '#ffe082' }}}%%
 quadrantChart
     title IDE Agent vs 终端Agent对比
     x-axis "低自主性" --> "高自主性"
@@ -108,7 +137,7 @@ Boris Cherny，Claude Code的创建者，说自己用Opus 4.5之后就再也没�
 Claude Code解决的不仅是代码效率问题，更是产品构建效率。
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e8f5e8', 'primaryTextColor': '#1b5e20', 'primaryBorderColor': '#4caf50', 'lineColor': '#66bb6a', 'fillType0': '#c8e6c9', 'fillType1': '#a5d6a7', 'fillType2': '#81c784' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#f0fdf4', 'secondaryColor': '#dcfce7', 'tertiaryColor': '#bbf7d0', 'primaryColor': '#e8f5e8', 'primaryTextColor': '#1b5e20', 'primaryBorderColor': '#4caf50', 'lineColor': '#66bb6a', 'fillType0': '#c8e6c9', 'fillType1': '#a5d6a7', 'fillType2': '#81c784' }}}%%
 flowchart TD
     A[想法] --> B{选择工具}
     B -->|传统方式| C[手动编码<br>耗时数天/周]
@@ -138,7 +167,7 @@ flowchart TD
 
 - **创业者，想实现一人公司。** 你想验证商业想法，但不想在技术上花太多钱和时间。Claude Code让一个人拥有一个小团队的开发能力，网站、App、后端API，都可以一个人搞定。
 
-> 核心建议：不管你属于哪一类，这本书假设你聪明，但可能从没用过AI编程工具。我们从零开始，但不会在基础概念上磨叽太久。
+> 不管你属于哪一类读者，本书都假设你愿意动手试，但不必事先用过 AI 编程工具。我们从安装和第一次对话写起，基础概念点到为止，尽快进入可复用的工作方式。
 #### 增长数据
 
 Claude Code在2025年2月公开发布（研究预览版），5月正式GA。GA后仅6个月，达到**10亿美元年化收入**。这个速度在SaaS历史上极其罕见。
@@ -148,7 +177,7 @@ Claude Code在2025年2月公开发布（研究预览版），5月正式GA。GA�
 当前Claude Code背后的模型有三个：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fce4ec', 'primaryTextColor': '#880e4f', 'primaryBorderColor': '#e91e63', 'lineColor': '#f06292', 'fillType0': '#f8bbd9', 'fillType1': '#f48fb1', 'fillType2': '#f06292' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#fdf2f8', 'secondaryColor': '#fce7f3', 'tertiaryColor': '#fbcfe8', 'primaryColor': '#fce4ec', 'primaryTextColor': '#880e4f', 'primaryBorderColor': '#e91e63', 'lineColor': '#f06292', 'fillType0': '#f8bbd9', 'fillType1': '#f48fb1', 'fillType2': '#f06292' }}}%%
 graph LR
     A[Opus 4.6] --> A1[推理能力最强<br>处理复杂任务和架构决策]
     B[Sonnet 4.6] --> B1[性价比最优<br>日常编码的主力]
@@ -164,7 +193,7 @@ graph LR
 #### 学习路线
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e1f5fe', 'primaryTextColor': '#01579b', 'primaryBorderColor': '#03a9f4', 'lineColor': '#039be5', 'fillType0': '#e3f2fd', 'fillType1': '#bbdefb', 'fillType2': '#90caf9' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#ecfeff', 'secondaryColor': '#cffafe', 'tertiaryColor': '#a5f3fc', 'primaryColor': '#e1f5fe', 'primaryTextColor': '#01579b', 'primaryBorderColor': '#03a9f4', 'lineColor': '#039be5', 'fillType0': '#e3f2fd', 'fillType1': '#bbdefb', 'fillType2': '#90caf9' }}}%%
 gantt
     title 7天学习计划
     dateFormat  YYYY-MM-DD
@@ -196,7 +225,7 @@ gantt
 #### 安装方式
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f3e5f5', 'primaryTextColor': '#4a148c', 'primaryBorderColor': '#9c27b0', 'lineColor': '#ab47bc', 'fillType0': '#fce4ec', 'fillType1': '#f8bbd9', 'fillType2': '#f48fb1' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#faf5ff', 'secondaryColor': '#f3e8ff', 'tertiaryColor': '#ede9fe', 'primaryColor': '#f3e5f5', 'primaryTextColor': '#4a148c', 'primaryBorderColor': '#9c27b0', 'lineColor': '#ab47bc', 'fillType0': '#fce4ec', 'fillType1': '#f8bbd9', 'fillType2': '#f48fb1' }}}%%
 flowchart TD
     A[选择安装方式] --> B{操作系统}
     B -->|macOS/Linux| C[Native Install<br>curl -fsSL https://claude.ai/install.sh | bash]
@@ -233,7 +262,7 @@ Windows需要先装Git for Windows：
 #### 使用环境选择
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e0f2f1', 'primaryTextColor': '#004d40', 'primaryBorderColor': '#00695c', 'lineColor': '#00897b', 'fillType0': '#b2dfdb', 'fillType1': '#80cbc4', 'fillType2': '#4db6ac' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#f0fdfa', 'secondaryColor': '#ccfbf1', 'tertiaryColor': '#99f6e4', 'primaryColor': '#e0f2f1', 'primaryTextColor': '#004d40', 'primaryBorderColor': '#00695c', 'lineColor': '#00897b', 'fillType0': '#b2dfdb', 'fillType1': '#80cbc4', 'fillType2': '#4db6ac' }}}%%
 flowchart LR
     A[使用环境] --> B{开发习惯}
     B -->|习惯终端| C[终端CLI<br>最原生完整]
@@ -252,7 +281,7 @@ flowchart LR
 #### 订阅方案
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#fce4ec', 'primaryTextColor': '#880e4f', 'primaryBorderColor': '#e91e63', 'lineColor': '#f06292', 'fillType0': '#f8bbd9', 'fillType1': '#f48fb1', 'fillType2': '#f06292' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#fdf2f8', 'secondaryColor': '#fce7f3', 'tertiaryColor': '#fbcfe8', 'primaryColor': '#fce4ec', 'primaryTextColor': '#880e4f', 'primaryBorderColor': '#e91e63', 'lineColor': '#f06292', 'fillType0': '#f8bbd9', 'fillType1': '#f48fb1', 'fillType2': '#f06292' }}}%%
 graph TD
     A[选择方案] --> B{使用频率}
     B -->|<2小时/天| C[Pro $20/月<br>基础用量]
@@ -268,7 +297,7 @@ graph TD
     style E fill:#e8f5e8
 ```
 
-> 核心建议：先从Pro开始，用几天自然知道够不够。
+> **订阅**：不确定选哪档时，先 Pro 试用几天，用量上来再考虑 Max。
 企业用户还可以通过Anthropic API按token计费，适合有自定义集成或合规要求的团队。v2.1.88新增了
 claude auth login --console 命令，可以直接用Anthropic Console账号登录（走API计费），不需要再单独
 配置API密钥。但对本书读者来说，直接订阅是最简单的开始方式。
@@ -278,7 +307,7 @@ claude auth login --console 命令，可以直接用Anthropic Console账号登�
 装好登录后，来第一次对话：
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f1f8e9', 'primaryTextColor': '#1b5e20', 'primaryBorderColor': '#4caf50', 'lineColor': '#66bb6a', 'fillType0': '#c8e6c9', 'fillType1': '#a5d6a7', 'fillType2': '#81c784' }}}%%
+%%{init: {'theme': 'base', 'themeVariables': { 'background': '#f7fee7', 'secondaryColor': '#ecfccb', 'tertiaryColor': '#d9f99d', 'primaryColor': '#f1f8e9', 'primaryTextColor': '#1b5e20', 'primaryBorderColor': '#4caf50', 'lineColor': '#66bb6a', 'fillType0': '#c8e6c9', 'fillType1': '#a5d6a7', 'fillType2': '#81c784' }}}%%
 sequenceDiagram
     participant U as 你
     participant T as 终端
@@ -318,8 +347,7 @@ open index.html  # macOS
 
 如果看到一个带样式的"Hello, Claude Code!"页面，恭喜，一切正常。
 
-看起来简单，但注意它的意义：一句自然语言，AI完成了「理解需求 → 创建文件 → 编写代码」的完整循环。后
-面所有进阶操作都是在这个基础上展开的。
+看起来简单，但注意它的意义：一句自然语言，AI完成了「理解需求 → 创建文件 → 编写代码」的完整循环。后面所有进阶操作都是在这个基础上展开的。
 
 ###### 确认一切正常
 
@@ -364,23 +392,24 @@ curl -fsSL https://claude.ai/install.sh | bash
 
 Claude Code会提醒你有新版本。手动更新就重新跑一遍安装命令：
 
-```
-# Native Install用户
+```bash
+# Native Install 用户
 curl -fsSL https://claude.ai/install.sh | bash
 ```
-```
-# Homebrew用户
+
+```bash
+# Homebrew 用户
 brew upgrade --cask claude-code
 ```
-```
-# WinGet用户
+
+```bash
+# WinGet 用户
 winget upgrade Anthropic.ClaudeCode
 ```
-```
-保持更新。 Claude Code迭代极快，几乎每周都有新功能。新版本不只是修bug，经常带来能力上的明显提升。
-建议至少每两周更新一次。
-```
-**装VS Code扩展**
+
+Claude Code 迭代很快，几乎每周都有新功能；新版本往往不只是修 bug，还会带来能力上的明显提升，建议至少每两周更新一次。
+
+**装 VS Code 扩展**
 
 想在VS Code里用Claude Code的话：
 
@@ -393,25 +422,16 @@ VS Code扩展底层调用的是同一个CLI，所以你不需要单独配置账�
 
 **装Desktop App**
 
-不习惯终端的用户可以用桌面应用。去 claude.ai/download 下载安装包，双击装好就行。本质上是终端CLI的
-图形界面包装。
+不习惯终端的用户可以用桌面应用。去 [claude.ai/download](https://claude.ai/download) 下载安装包，双击装好就行。本质上是终端 CLI 的图形界面包装。
 
-```
-注意
-不管你选哪种方式，都建议先把CLI装好。CLI是基础，VS Code扩展和Desktop App都依赖它。CLI能跑，其他
-环境基本不会有问题。
-```
+> **建议**：不管选哪种入口，都先把 CLI 装好。CLI 是基础，VS Code 扩展和 Desktop App 都依赖它；CLI 能跑，其他环境一般也不会出大问题。
 
 装完了，账号登了，第一次对话也跑通了。下一章，正式开始做一个真实项目。
 
 
 ### 03 你的第一个项目
 
-Your First Project — Learning by Doing
-
-理论讲完了，直接上手。这一章从零做一个真实的CLI工具。做完之后，你就真正理解对话式编程是怎
-
-么回事了。
+下面从零做一个真实的 CLI 小工具：做完这一遍，你会对「对话式改代码」有直观感受。
 
 ###### 做个什么
 
@@ -454,14 +474,9 @@ claude
 
 先别急着写代码，给我一个实现方案。
 ```
-注意最后那句「先别急着写代码，给我一个实现方案」。这不是客气，是一个重要技巧：让Claude先 **想清楚** 再动
-手。
+注意最后那句「先别急着写代码，给我一个实现方案」：这是在强制它先出方案再动手，往往能少返工。
 
-```
-核心建议
-需求描述的质量直接决定输出质量。几个原则：说清楚最终产物长什么样（Markdown日报）、指定技术选型
-（TypeScript + tsx）、给具体数据源URL而不是说「几个RSS源」。越具体越好。
-```
+**小结：** 需求越具体，输出越稳——说清楚最终产物（例如 Markdown 日报长什么样）、技术栈（TypeScript + tsx）和数据源（给出 URL），比笼统说「抓几个 RSS」有用得多。
 ###### 第二步：看它怎么想的 Review the Plan
 
 Claude收到需求后，不会直接开写，会先给你一个方案。大概长这样：
@@ -532,11 +547,7 @@ ai-news-digest/
 整个过程大约2-5分钟。你干嘛？ **看着就行。** 就像把任务交给新同事，前几次你会盯着看他怎么做事。等熟悉了
 他的风格，以后放心让他自己干就好。
 
-```
-注意
-执行过程中Claude可能多次请求权限。初期建议每次都看一眼它要跑什么命令。熟悉后可以用 /permissions
-预授权常见命令（04会细讲），或者直接开Auto模式。
-```
+> **执行中**：它可能会多次申请跑命令的权限。刚开始建议每条都看一眼；熟悉之后可以用 `/permissions` 预授权常用命令，或直接配合后文的 Auto / 白名单策略。
 ###### 第四步：看看结果对不对 Verify the Output
 
 Claude干完了，跑一下看看：
@@ -614,20 +625,22 @@ Claude会修改代码，加入API调用逻辑。你验证后继续：
 
 #### 描述需求 → 审查方案 → 确认执行 → 验证结果 → 迭代改进
 
-```
-   ┌──────────────┐        ┌──────────────┐        ┌──────────────┐
-   │ 描述需求     │ ─────→ │ 审查方案     │ ─────→ │ 确认执行     │
-   │（自然语言）  │        │（Plan 模式） │        │（Auto-edit） │
-   └──────────────┘        └──────────────┘        └──────┬───────┘
-          ▲                                                │
-          │                                                ▼
-   ┌──────┴───────┐                                ┌──────────────┐
-   │ 迭代改进     │ ←─────────────────────────────  │ 验证结果     │
-   │（继续对话）  │                                │（跑代码/测试）│
-   └──────────────┘                                └──────────────┘
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f8fafc', 'primaryColor': '#cbd5e1', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#64748b', 'lineColor': '#475569', 'secondaryColor': '#e2e8f0', 'tertiaryColor': '#f1f5f9', 'fillType0': '#e0f2fe', 'fillType1': '#fce7f3', 'fillType2': '#d1fae5'}}}%%
+flowchart LR
+    A["描述需求<br/>自然语言"] --> B["审查方案<br/>Plan"]
+    B --> C["确认执行<br/>自动改代码"]
+    C --> D["验证结果<br/>跑通 / 测试"]
+    D --> E["迭代改进<br/>继续对话"]
+    E --> A
+    style A fill:#e0f2fe,stroke:#0369a1
+    style B fill:#fef3c7,stroke:#b45309
+    style C fill:#fce7f3,stroke:#be185d
+    style D fill:#d1fae5,stroke:#047857
+    style E fill:#ede9fe,stroke:#5b21b6
 ```
 
-不管项目大小，不管是小工具还是完整产品，底层模式都是这五步。
+不管项目大小，小工具还是完整产品，底层都是这五步在循环。
 
 ###### 一个重要的心态转变 The Mental Shift
 
@@ -681,12 +694,9 @@ Promise.allSettled 而不是 Promise.all？」它会解释背后的技术选择�
 
 一个经验：纠正两次还不行，就果断停下来重来。在错误基础上打补丁只会越补越乱。
 
-```
-这一章的核心： 描述需求、审查方案、确认执行、验证结果、迭代改进。你管要什么和好不好，Claude管怎么
-实现。这个分工形成默契之后，生产力会有质的变化。
-```
+做完这一章，可以记住一条分工：**你负责「要什么」和「验收」；实现细节交给 Claude。** 配合顺了，速度会差很多。
 
-###### 🛠️ 动手练习 03
+###### 练习 03
 
 把这一章的 RSS 聚合器自己跑一遍，但换成你真正会用的需求。三选一：
 
@@ -702,11 +712,7 @@ Promise.allSettled 而不是 Promise.all？」它会解释背后的技术选择�
 
 ### 04 核心工作流
 
-Core Workflows — The Patterns That Matter
-
-跑通第一个项目之后，你可能觉得Claude Code也就这样——写代码、确认权限、看结果。但日常用
-
-下来，真正拉开效率差距的是几个核心工作模式。这一章把它们拆开聊。
+跑通第一个项目之后，你可能觉得 Claude Code 也就那样：改文件、点授权、看结果。真正拉开差距的，是下面几种固定用法。
 
 ###### Plan模式：先想清楚再动手 Plan Mode
 
@@ -716,57 +722,40 @@ Boris（Claude Code的创建者）说过一句话： **「一个好的计划真�
 Plan模式的作用很直接：让Claude只规划、不执行。它会告诉你它打算怎么做，但不会动你的代码、不会装
 包、不会运行命令。你们来回讨论方案，确认了再放手让它去做。
 
-**Claude Code 三种权限模式的状态机**
+**Claude Code 三种权限模式（Shift+Tab 循环）**
 
-```
-                    ┌──────────────────┐
-                    │   default 模式   │ ← 启动时的默认
-                    │ 每个写操作都确认 │
-                    └────────┬─────────┘
-                             │  Shift+Tab
-                             ▼
-                  ┌──────────────────────┐
-                  │  acceptEdits 模式    │
-                  │ 自动放行编辑，跑代   │
-                  │ 码/装包仍要确认      │
-                  └────────┬─────────────┘
-                           │  Shift+Tab
-                           ▼
-                  ┌──────────────────┐         按 Shift+Tab
-                  │   plan 模式      │ ───────→ 回到 default
-                  │ 只规划不动代码   │
-                  └──────────────────┘
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#fffbeb', 'primaryColor': '#fde68a', 'primaryTextColor': '#78350f', 'primaryBorderColor': '#d97706', 'lineColor': '#b45309', 'secondaryColor': '#fef3c7', 'tertiaryColor': '#fff7ed', 'fillType0': '#ffedd5', 'fillType1': '#fed7aa', 'fillType2': '#fdba74'}}}%%
+flowchart TB
+    start([启动]) --> D["default<br/>每次写入都确认"]
+    D -->|Shift+Tab| A["acceptEdits<br/>自动放行编辑 · 跑命令/装包仍确认"]
+    A -->|Shift+Tab| P["plan<br/>只规划 · 不改代码"]
+    P -->|Shift+Tab| D
+    style D fill:#fee2e2,stroke:#b91c1c
+    style A fill:#dbeafe,stroke:#1d4ed8
+    style P fill:#fef9c3,stroke:#a16207
 ```
 
 **如何进入Plan模式**
 
 在Claude Code的输入框中，按两次 Shift+Tab。你会看到界面切换到Plan模式。此时Claude的行为会改变：
 
-```
-它可以读取文件来理解代码，但不会修改任何文件
-它会给出详细的实现方案，包括要改哪些文件、怎么改
-你可以反复讨论、修改方案
-```
+- 可以读文件理解代码，但不会改任何文件
+- 会给出较细的实现方案（涉及哪些文件、怎么改）
+- 你可以反复讨论、改方案后再执行
+
 **Plan模式的黄金工作流**
 
 Boris推荐的完整流程是这样的：
 
-```
-1 Plan模式下描述需求，来回讨论
-用 Shift+Tab × 2 进入Plan模式，描述你的需求。Claude给出方案后，你可以说「第三步换个方式」
-「这里的库用XXX替换」，反复调整。
-```
-```
-2 用编辑器写一份详细的执行指令
-方案大致满意后，按 Ctrl+G，会在你的默认编辑器（由 $EDITOR 环境变量决定）中打开输入框。你可
-以在编辑器里写一份完整的执行指令，把讨论中确认的方案细节、约束条件都写进去，保存后内容回到
-Claude Code的输入框，作为下一步的prompt发出。
-```
-```
-3 切换到执行模式，开启Auto-accept
-计划确认后，按 Shift+Tab 切回正常模式。因为计划已经讨论充分，你可以放心地让Claude一次性执行
-完成，不需要逐步确认。
-```
+1. **Plan 里把需求聊透**  
+   用 Shift+Tab 两次进入 Plan，描述需求；对方案不满意就直说（例如「第三步换种做法」「这里改用某某库」），多轮对齐。
+
+2. **用编辑器写一版「执行说明」**  
+   方案差不多后按 `Ctrl+G`，会在 `$EDITOR` 里打开输入框；把已定稿的约束、步骤写完整，保存后内容回到 Claude Code，作为下一条消息发出。
+
+3. **切回执行模式，一次性做完**  
+   计划确认后，用 Shift+Tab 回到可执行模式；计划已经对齐，就可以让它连续执行，少被打断。
 
 这个流程的精髓在于： **把纠结放在Plan阶段解决完，执行阶段一气呵成。** 边做边改、反复返工是最浪费tokens
 的用法。
@@ -780,11 +769,9 @@ Claude Code的输入框，作为下一步的prompt发出。
 | 你对这块代码不熟悉 | 你很清楚要改什么 |
 | 重构或架构级别的变更 | 跑个测试、装个包 |
 | 第一次接触一个新项目 | 重复性的日常操作 |
-```
-核心建议
-一条实用判断标准：如果你需要跟同事解释才能让他做的任务，就值得用Plan模式。如果你能用一句话说清的
-任务，直接做就行。
-```
+
+**小结：** 需要跟同事解释半天才能交代的任务，值得先 Plan；一句话能说清的小改动，直接做就好。
+
 ###### Auto模式：更安全的自动驾驶 Auto Mode
 
 用了一阵Claude Code之后，你大概已经体会到那种「烦躁感」了。每次写文件要确认、运行命令要确认、装
@@ -830,12 +817,12 @@ claude --permission-mode auto
 
 `--permission-mode` 的标准取值有：`default`（每步确认）、`acceptEdits`（自动放行文件编辑和常见 filesystem 命令）、`plan`（只规划不执行）、`bypassPermissions`（跳过所有，等价于 `--dangerously-skip-permissions`）。`auto` 在不同分发版可能不可用——如果你的版本没有，就用 `acceptEdits` 配合下一节的 `/permissions` 白名单。
 
-```
-注意
-Auto模式不是万能的。Anthropic公开的数据显示，对于「过度主动行为」，分类器仍有17%的漏检率。操作生
-产数据库、管理云基础设施这类事情，还是手动确认比较踏实。Auto模式最适合日常开发：写代码、跑测试、
-Git操作。
-```
+
+> **注意**
+> Auto模式不是万能的。Anthropic公开的数据显示，对于「过度主动行为」，分类器仍有17%的漏检率。操作生
+> 产数据库、管理云基础设施这类事情，还是手动确认比较踏实。Auto模式最适合日常开发：写代码、跑测试、
+> Git操作。
+
 **Auto模式 vs --dangerously-skip-permissions**
 
 你可能在社区里看到有人推荐用 --dangerously-skip-permissions 来跳过所有权限提示。两者的区别很关
@@ -880,11 +867,11 @@ Bash(git push)
 ```
 这些规则可以保存到 .claude/settings.json 并提交到Git，让整个团队共享同一套权限配置。
 
-```
-核心建议
-Boris的做法：不用Auto模式也不跳过权限，而是用 /permissions 仔细配置一套白名单。白名单会check进
-git，和团队共享。这是最精细也最安全的方案，只是初始配置需要花点时间。
-```
+
+> **小结**
+> Boris的做法：不用Auto模式也不跳过权限，而是用 /permissions 仔细配置一套白名单。白名单会check进
+> git，和团队共享。这是最精细也最安全的方案，只是初始配置需要花点时间。
+
 **三层权限选择**
 
 总结一下Claude Code的权限体系，从最省心到最精细：
@@ -944,11 +931,7 @@ cd ../myproj-feature-x && claude
 这在多任务并行时特别有用。比如你在修一个bug的同时，想让Claude在另一个分支做一个新功能。用
 worktree，两件事互不干扰。
 
-```
-Boris的并行工作方式： 他在终端里同时运行 5 个Claude Code实例，每个在不同的worktree中工作。加上
-claude.ai/code网页端的5-10个会话，他一个人就能同时推进十几个任务。这就是Agent式工作的威力：你不需
-要自己做所有事，你管理一群Agent帮你做事。
-```
+> Boris 的并行工作方式：他在终端里同时运行 5 个 Claude Code 实例，每个在不同的 worktree 中工作；再加上 [claude.ai/code](https://claude.ai/code) 网页端上的 5～10 个会话，他一个人就能同时推进十几个任务。这就是多 Agent 协作的威力：你不必自己做所有事，而是调度一群 Agent 帮你做事。
 
 ###### Computer Use：AI长了眼睛和手 Computer Use
 
@@ -966,7 +949,7 @@ claude.ai/code网页端的5-10个会话，他一个人就能同时推进十几�
 你也可以主动让它看屏幕：
 
 ```
-# 让Claude看看当前屏幕上的东⻄
+# 让Claude看看当前屏幕上的东西
 看一下我屏幕上的这个⻚面，告诉我布局有什么问题
 ```
 ```
@@ -1009,11 +992,11 @@ terminal，才能跟Claude Code协作。现在一个PM可以对Claude说「帮�
 - **慢**：每一步操作都需要截图 → 分析 → 决定 → 执行，一个人类 0.5 秒完成的点击，Claude 可能需要几秒钟
 - **精细操作不靠谱**：拖拽一个滑块到精确位置、在一个密密麻麻的表格里选中某个特定单元格，这类操作它经常偏
 - **不适合需要快速反应的场景**：动画、实时交互、游戏测试，Claude 的反应速度跟不上
-```
-核心建议
-Computer Use现阶段最好的定位是：把它当成一个耐心但手速慢的测试员。给它那些「按照固定流程重复操
-作」的任务，它做得很好。需要灵活判断和快速反应的，还是自己来。
-```
+
+> **小结**
+> Computer Use现阶段最好的定位是：把它当成一个耐心但手速慢的测试员。给它那些「按照固定流程重复操
+> 作」的任务，它做得很好。需要灵活判断和快速反应的，还是自己来。
+
 ###### Voice Mode：开口说话就能编程 Voice Mode
 
 按住空格说话，松开发送。就这么简单。
@@ -1051,11 +1034,11 @@ Voice Mode的功能本身挺简单的，就是语音转文字。但交互方式�
 - 需要相对安静的环境，嘈杂背景下识别率会下降
 - 长指令还是打字更精确。你说一段 200 字的详细技术需求，中间可能出现误识别，还不如打字靠谱
 - 目前最适合的是启动任务和快速交互：「帮我跑一下测试」「把这个函数重命名成 XXX」「看看这个文件有什么问题」
-```
-核心建议
-一个实用的组合：语音快速启动任务（「帮我做个XXX」），然后切回键盘输入精确的细节和约束条件。两种交互
-方式混着用，比纯用一种效率高。
-```
+
+> **小结**
+> 一个实用的组合：语音快速启动任务（「帮我做个XXX」），然后切回键盘输入精确的细节和约束条件。两种交互
+> 方式混着用，比纯用一种效率高。
+
 ###### 会话管理：别让上下文变成垃圾场 Session Management
 
 Claude Code有上下文限制。对话越长，Claude对当前任务的注意力越分散。用好Claude Code，会话管理这
@@ -1143,20 +1126,13 @@ Code做传统编程。
 
 项目根目录没有CLAUDE.md，或者有但从不更新。每次新会话都要重新解释项目背景、代码规范、技术选型。
 
-这个太重要了，整整一章来讲。翻到05。
+下一章整章都在写这个文件。
 
-```
-这一章的核心： Plan模式想清楚再动手，Auto模式减少审批疲劳，/permissions精细控权限，Git集成管版本，
-会话管理保持上下文干净。这五个工作流覆盖90%的日常场景。剩下10%的高级用法后面几章展开。
-```
+> **本章回顾**：Plan 把纠结前置；Auto 减轻「狂按 y」的审批疲劳；`/permissions` 做白名单；Git 相关操作可以交给它；会话该清就清、该压就压。这几件事覆盖了大部分日常开发；更细的玩法在后面几章展开。
 
-### 05 CLAUDE.md：给AI一张地图
+### 05 CLAUDE.md：给 AI 一张地图
 
-CLAUDE.md — The Map You Draw for Your AI
-
-Claude Code每次对话开始时会自动读取CLAUDE.md。这个文件不是说明书，它更像一份契约。你和
-
-AI之间关于怎么干活的约定，就写在这一个文件里。
+Claude Code 每次开新会话都会读 CLAUDE.md。它不像长篇设计文档，更像你和工具之间的一份**短契约**：哪些事必须按项目规矩来，写清楚即可。
 
 ###### 为什么它是最重要的文件
 
@@ -1187,11 +1163,11 @@ Boris（Claude Code的创建者）团队的CLAUDE.md只有大约2500 tokens，�
 
 Shrivu分享了一个更有意思的做法：
 
-```
-核心建议
-你的CLAUDE.md应该从小开始，基于Claude做错的事情来记录。不要试图预先写一本完整手册，而是 每次
-Claude犯错，就加一条规则 。这就是「从护栏开始」的意思。
-```
+
+> **小结**
+> 你的CLAUDE.md应该从小开始，基于Claude做错的事情来记录。不要试图预先写一本完整手册，而是 每次
+> Claude犯错，就加一条规则 。这就是「从护栏开始」的意思。
+
 
 这个方法好在哪？规则文件永远精准，因为每条都对应一个真实踩过的坑。文件也天然保持精简，因为你只记
 录真正出过问题的地方。
@@ -1236,24 +1212,19 @@ docs/troubleshooting.md了解故障排除步骤。」
 
 CLAUDE.md不只是一个文件，而是一套层级系统。Claude Code会自动按顺序读取多个位置的CLAUDE.md：
 
-```
-                  ┌─────────────────────────────────────┐
-                  │  ~/.claude/CLAUDE.md                │ ← 全局个人偏好
-                  │  （所有项目都生效）                 │   不入 git
-                  └──────────────┬──────────────────────┘
-                                 │
-                  ┌──────────────▼──────────────────────┐
-                  │  ./CLAUDE.md                        │ ← 项目级团队规则
-                  │  （当前项目所有 session 都生效）    │   入 git 共享
-                  └──────────────┬──────────────────────┘
-                                 │
-                  ┌──────────────▼──────────────────────┐
-                  │  ./src/CLAUDE.md                    │ ← 子目录级
-                  │  ./apps/api/CLAUDE.md               │   monorepo 子模块
-                  │  （进对应目录时叠加加载）           │   入 git 共享
-                  └─────────────────────────────────────┘
-
-       优先级：越深的目录越靠后加载，可覆盖上层规则
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f3ff', 'primaryColor': '#ddd6fe', 'primaryTextColor': '#312e81', 'primaryBorderColor': '#6366f1', 'lineColor': '#4f46e5', 'secondaryColor': '#e9d5ff', 'tertiaryColor': '#fae8ff', 'fillType0': '#ede9fe', 'fillType1': '#fce7f3', 'fillType2': '#cffafe'}}}%%
+flowchart TB
+    G["~/.claude/CLAUDE.md<br/>全局个人偏好 · 所有项目生效 · 不入 git"]
+    P["./CLAUDE.md<br/>项目级团队规则 · 入 git 共享"]
+    S["子目录 CLAUDE.md<br/>如 ./src、./apps/api · 进入对应目录时叠加"]
+    G --> P --> S
+    N["优先级：越深的路径越晚加载，可覆盖上层规则"]
+    S --> N
+    style G fill:#e0e7ff,stroke:#4338ca
+    style P fill:#fce7f3,stroke:#be185d
+    style S fill:#ccfbf1,stroke:#0f766e
+    style N fill:#fef3c7,stroke:#b45309
 ```
 
 文件路径速查：
@@ -1321,11 +1292,11 @@ CLAUDE.md不只是一个文件，而是一套层级系统。Claude Code会自动
 整个文件不到 300 字。但每一行都有价值：要么是Claude猜不到的命令，要么是踩过坑的经验。没有一句废
 话。
 
-```
-注意
-不要把这个示例直接复制过去。好的CLAUDE.md是从你自己的项目中「长出来」的。空文件开始，Claude犯
-一次错就加一条，三个月后那个文件就是你的定制护栏。
-```
+
+> **注意**
+> 不要把这个示例直接复制过去。好的CLAUDE.md是从你自己的项目中「长出来」的。空文件开始，Claude犯
+> 一次错就加一条，三个月后那个文件就是你的定制护栏。
+
 ###### Auto Memory：Claude自己记住的东西 Automatic Memory
 
 除了你手写的CLAUDE.md，Claude Code还有一个自动记忆系统。
@@ -1427,11 +1398,11 @@ Anthropic工程团队发现， **上下文太多，模型表现反而变差。**
 建议定期用/context命令看看上下文窗口的使用情况。他在monorepo里测过，一个新会话光加载基础配置就
 吃掉约20k tokens，剩下180k才是干活的空间。
 
-```
-核心建议
-上下文管理的核心原则： 不是给所有信息，而是给对的信息。 让Claude看到它解决当前问题需要的上下文，而
-不是整个项目的百科全书。
-```
+
+> **小结**
+> 上下文管理的核心原则： 不是给所有信息，而是给对的信息。 让Claude看到它解决当前问题需要的上下文，而
+> 不是整个项目的百科全书。
+
 你可以通过几种方式主动管理上下文：
 
 - **@ 引用文件**：用 `@src/utils/auth.ts` 告诉 Claude 去读某个特定文件
@@ -1509,11 +1480,11 @@ git分支中的变更来恢复上下文。
 有时你需要Claude先调研再动手：「看看这个库怎么用」「分析一下竞品的实现方式」。这些调研任务可以用
 subagent来做，调研结果返回主会话，中间的思考过程不会污染主上下文。
 
-```
-注意
-Shrivu特别提醒：不要依赖/compact（自动压缩）。它是不透明的、容易出错的。 需要重启时用 /clear ，不
-要用 /compact 。
-```
+
+> **注意**
+> Shrivu特别提醒：不要依赖/compact（自动压缩）。它是不透明的、容易出错的。 需要重启时用 /clear ，不
+> 要用 /compact 。
+
 ###### Effort级别：别省这个钱 Effort Level
 
 Claude Code 有五个 effort 级别：Low、Medium、High、xHigh、Max。`/effort` 用方向键调，控制 Claude 执行任务时投入多少推理资源。
@@ -1531,11 +1502,11 @@ xHigh 是 Opus 4.7 的默认值，Boris 的做法是从不把它调低。理由�
 长。
 
 
-```
-核心建议
-如果你用的是 Max 计划，xHigh 已经是默认值，不需要额外调整。 别为了省几秒钟把 effort 调低，修低级错误花
-的时间远不止几秒。
-```
+
+> **小结**
+> 如果你用的是 Max 计划，xHigh 已经是默认值，不需要额外调整。 别为了省几秒钟把 effort 调低，修低级错误花
+> 的时间远不止几秒。
+
 ###### 三个提问原则 The Art of Asking
 
 和Claude Code对话的核心其实就三个字。
@@ -1551,13 +1522,9 @@ Claude大概率只做好其中一个。
 我觉得一个好的心态是：把Claude当成一个非常聪明但刚入职的同事。能力很强，但不了解你项目的历史和惯
 例。你给的上下文越精准，它的产出越接近预期。
 
-```
-这一章的核心： 好的对话靠的不是花哨的prompt，而是精准的上下文。具体化需求，让Claude采访你来补盲
-点，用/clear保持干净，别把effort调低。说到底，最有效的进阶是在实践中积累和Claude协作的直觉，不是
-学更多prompt技巧。
-```
+> **本章回顾**：进阶对话不靠「咒语」，靠你把上下文给准——需求具体、必要时让它先问再写、`/clear` 保持会话干净，effort 也别乱调。最有效的熟练路径是多练几次协作，而不是堆 prompt 模板。
 
-###### 🛠️ 动手练习 06
+###### 练习 06
 
 打开你最近在做的项目，挑一个你「自己实现要花 30 分钟以上」的任务，按下面三步走：
 
@@ -1570,22 +1537,30 @@ Claude大概率只做好其中一个。
 
 ### 07 五个程序员场景实战
 
-Five Real-World Scenarios for Engineers
-
-理论讲完了。这一章把前 6 章的技巧揉进 5 个程序员日常最常遇到的场景：实现算法、做前端组件、定位 Bug、生成文档、补测试。每个场景给出可复用的 prompt 模板、Claude 真实输出的关键代码，以及该场景里要注意的坑。
+下面把前几章的技巧放进五个程序员最常碰的场景里：实现算法、做前端组件、定位 Bug、生成文档、补测试。每个场景有可复用的 prompt 模板、示例输出片段，以及容易踩的坑。
 
 ###### 场景全景图
 
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#ecfeff', 'primaryColor': '#a5f3fc', 'primaryTextColor': '#164e63', 'primaryBorderColor': '#0891b2', 'lineColor': '#0e7490', 'secondaryColor': '#cffafe', 'tertiaryColor': '#e0f2fe', 'fillType0': '#e0f2fe', 'fillType1': '#fce7f3', 'fillType2': '#fef3c7'}}}%%
+flowchart LR
+    s1["场景1<br/>算法"] --> s2["场景2<br/>前端"] --> s3["场景3<br/>Bug"] --> s4["场景4<br/>文档"] --> s5["场景5<br/>测试"]
+    s5 --> tip["共通技巧<br/>file:line · 约束写清 · --resume"]
+    style s1 fill:#dbeafe,stroke:#1d4ed8
+    style s2 fill:#fce7f3,stroke:#be185d
+    style s3 fill:#fee2e2,stroke:#b91c1c
+    style s4 fill:#fef3c7,stroke:#b45309
+    style s5 fill:#d1fae5,stroke:#047857
+    style tip fill:#f1f5f9,stroke:#475569
 ```
-┌─────────────────────────────────────────────────────┐
-│  场景 1  实现算法     │ 渐进式精化 + 性能对比       │
-│  场景 2  前端组件     │ 截图反馈 + 响应式约束       │
-│  场景 3  定位 Bug     │ 描述症状 + 补回归测试       │
-│  场景 4  生成文档     │ 多文件输入 + 结构化输出     │
-│  场景 5  补测试用例   │ 参考已有风格 + 分支覆盖     │
-└─────────────────────────────────────────────────────┘
-       底层共通技巧：file:line 定位、约束条件、--resume 续接
-```
+
+| 场景 | 侧重点 |
+|------|--------|
+| 1 算法 | 渐进式精化 + 性能对比 |
+| 2 前端 | 截图反馈 + 响应式约束 |
+| 3 Bug | 描述症状 + 补回归测试 |
+| 4 文档 | 多文件输入 + 结构化输出 |
+| 5 测试 | 参考已有风格 + 分支覆盖 |
 
 ###### 场景 1：快速实现一个算法（快速排序）
 
@@ -1649,13 +1624,11 @@ function partition(arr: number[], left: number, right: number): number {
 
 预期对比表（Claude 真实跑出来的结果）：
 
-```
-算法            小数组(100)    大数组(10k)    重复多(100k)
-─────────────────────────────────────────────────────────
-基础快排        0.1ms          15ms           45ms ❌
-随机化快排      0.1ms          12ms           42ms
-三路快排        0.1ms          12ms           2ms ✅
-```
+| 算法 | 小数组 (100) | 大数组 (10k) | 重复多 (100k) |
+|------|--------------|--------------|---------------|
+| 基础快排 | 0.1ms | 15ms | 45ms（差） |
+| 随机化快排 | 0.1ms | 12ms | 42ms |
+| 三路快排 | 0.1ms | 12ms | 2ms（好） |
 
 **这一节的要点**：
 
@@ -1799,12 +1772,17 @@ export const Dashboard = () => {
 > Mock useAuth 和 useNavigate
 ```
 
-**调试工作流图**：
+**调试工作流（示意）**：
 
-```
-症状描述 → 信息收集 → 代码审查 → 根因定位 → 实现修复 → 补测试 → 验证
-   ↑                                                              │
-   └──────────────────── 闪屏不再出现 ←──────────────────────────┘
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#fff7ed', 'primaryColor': '#fed7aa', 'primaryTextColor': '#7c2d12', 'primaryBorderColor': '#ea580c', 'lineColor': '#c2410c', 'secondaryColor': '#ffedd5', 'tertiaryColor': '#fef3c7', 'fillType0': '#ffedd5', 'fillType1': '#fce7f3', 'fillType2': '#e0f2fe'}}}%%
+flowchart LR
+    A[症状描述] --> B[信息收集] --> C[代码审查] --> D[根因定位] --> E[实现修复] --> F[补测试] --> G[验证]
+    G -.->|未通过| B
+    G -->|通过| H[问题消失]
+    style A fill:#fee2e2,stroke:#b91c1c
+    style G fill:#d1fae5,stroke:#047857
+    style H fill:#dcfce7,stroke:#166534
 ```
 
 **这一节的要点**：
@@ -1987,7 +1965,7 @@ describe('CartService', () => {
 | 生成文档 | 多文件输入 + mermaid 输出 | 10 分钟 |
 | 补测试 | 参考已有风格 + 分支覆盖 | 30 分钟 |
 
-###### 🛠️ 动手练习 07
+###### 练习 07
 
 挑一个你正在维护的项目，从五个场景里选一个对应你的真实需求做一遍：
 
@@ -1999,14 +1977,9 @@ describe('CartService', () => {
 
 验收标准：交付前你能把它讲给同事听 5 分钟。
 
-```
-这一章的核心： 五个场景的核心模式都一样——把任务拆成「先写一版 → 跑起来看 → 让 Claude 改 → 补测试」
-四步小循环。每一步都可验证，错了能立刻倒回去。这个循环熟练之后，再大的项目都是它的累加。
-```
+> **本章回顾**：五个场景共用同一套节奏：先出一版能跑的 → 跑起来看 → 让 Claude 改 → 补测试。每一步都能验收，错了就退回上一步；把这个小循环练熟，大项目只是多跑几轮而已。
 
 ### 08 扩展能力：Skills、Hooks 与 MCP
-
-Extensions: Skills, Hooks & MCP
 
 用到后面你会发现，Claude Code真正的价值不是它本身有多强，而是你能在它身上接多少东西。
 
@@ -2025,31 +1998,22 @@ Skills、Hooks、MCP三种扩展机制，让它从一个终端工具变成一个
 | Skills | Markdown 指令包 | 高但非 100%（advisory） | 领域知识、可复用工作流 |
 | Hooks | Shell 脚本钩子 | 100% 确定执行 | 格式化、lint、安全检查 |
 | MCP | 外部工具连接器 | 100% | 数据库、API、第三方服务 |
-三者的关系： **Skills教Claude怎么做事** ， **Hooks在关键节点自动执行检查** ， **MCP把外面的世界接进来** 。我个人
-用得最多的是Skills，几乎每天都在加新的。
+三者的关系可以概括成：**Skills 教 Claude 怎么做事**，**Hooks 在关键节点自动执行检查**，**MCP 把外部系统接进来**。我自己用得最多的是 Skills，几乎每天都在加新的。
 
-```
-                          ┌──────────────────┐
-                          │   Claude Code    │
-                          │     主循环       │
-                          └────┬────┬────┬───┘
-                               │    │    │
-              ┌────────────────┘    │    └─────────────────┐
-              ▼                     ▼                      ▼
-     ┌──────────────────┐  ┌─────────────────┐  ┌──────────────────┐
-     │     Skills       │  │     Hooks       │  │       MCP        │
-     │   (软指令)       │  │   (硬钩子)      │  │   (外部接口)     │
-     ├──────────────────┤  ├─────────────────┤  ├──────────────────┤
-     │ 教 Claude 规则   │  │ 强制执行 shell  │  │ 连接数据库/API   │
-     │ "怎么做这件事"   │  │ "做完一定要做X" │  │ "去外面拿数据"   │
-     │ 自动/手动加载    │  │ 100% 触发       │  │ 100% 真实数据    │
-     │ 长对话后可能忘   │  │ 永远不会忘      │  │ 实时同步         │
-     └──────────────────┘  └─────────────────┘  └──────────────────┘
-            示例                  示例                   示例
-       /fix-issue            PostToolUse:        Postgres / Slack /
-       /review-pr            自动跑 prettier     GitHub / Sentry
-       /generate-report      PreCompact:         Figma / Filesystem
-                             备份 transcript
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f8fafc', 'primaryColor': '#cbd5e1', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#64748b', 'lineColor': '#475569', 'secondaryColor': '#e2e8f0', 'tertiaryColor': '#f1f5f9', 'fillType0': '#e0e7ff', 'fillType1': '#fce7f3', 'fillType2': '#ccfbf1'}}}%%
+flowchart TB
+    CC["Claude Code<br/>主循环"]
+    CC --> S["Skills · 软指令<br/>教规则 · 可自动/手动加载"]
+    CC --> H["Hooks · 硬钩子<br/>shell 在节点强制执行"]
+    CC --> M["MCP · 外部接口<br/>数据库 / API / 第三方"]
+    S --- s1["例：/fix-issue · /review-pr"]
+    H --- h1["例：PostToolUse 跑 prettier"]
+    M --- m1["例：Postgres · Slack · GitHub"]
+    style CC fill:#fef3c7,stroke:#b45309
+    style S fill:#dbeafe,stroke:#1d4ed8
+    style H fill:#fce7f3,stroke:#be185d
+    style M fill:#d1fae5,stroke:#047857
 ```
 
 ###### Skills：我觉得最值得先学的
@@ -2081,11 +2045,8 @@ pr（代码审查流程）。这类skill更像SOP，有明确的步骤和检查�
 Boris有一个挺实用的判断标准： **如果一件事你每天做超过一次，就应该把它变成skill或command。** 我自己更
 激进一点，超过两次我就写了。
 
-```
-实际案例：创建 /techdebt 命令
-把「发现技术债 → 评估影响 → 创建issue → 关联到sprint」这个流程写成skill。以后发现技术债时，直接输入
-/techdebt，Claude会自动走完整个流程，包括评估优先级、创建GitHub issue、加上正确的标签。
-```
+> **例子**：把「发现技术债 → 评估影响 → 建 issue → 挂到 sprint」写成 `/techdebt` 的 Skill。以后只要输入 `/techdebt`，Claude 会按流程评估优先级、在 GitHub 上建 issue 并打好标签。
+
 **工作流型skill的关键配置**
 
 工作流型skill通常会执行有副作用的操作（比如创建issue、发消息、部署）。为了防止Claude在不合适的时候
@@ -2110,11 +2071,11 @@ curl -L -o ~/.claude/skills/boris/SKILL.md \
 安装后你就拥有了Boris日常使用的工作流，包括他的commit规范、PR模板、代码审查标准等。社区也在不断
 贡献新的skills，你可以在Claude Code里用 /plugin 浏览市场。
 
-```
-核心建议
-写skill的最佳实践：从你最常对Claude说的那句话开始。如果你总是在提交前说「先跑一下测试，格式化一下
-代码，然后commit」，那这就是一个skill的雏形。把这些步骤写进SKILL.md，下次一个斜杠命令就搞定。
-```
+
+> **小结**
+> 写skill的最佳实践：从你最常对Claude说的那句话开始。如果你总是在提交前说「先跑一下测试，格式化一下
+> 代码，然后commit」，那这就是一个skill的雏形。把这些步骤写进SKILL.md，下次一个斜杠命令就搞定。
+
 ###### Hooks：不是建议，是强制
 
 Skills有一个天然的局限：它本质上是对Claude的「建议」。Claude会尽量遵守，但遵从率不是100%，尤其在
@@ -2173,11 +2134,11 @@ Hooks支持多个触发时机：
 **案例 4 ：推动Claude继续。** 有时候Claude会在一个复杂任务中途停下来问「要继续吗？」。Stop hook可以检测
 这种情况，自动让Claude继续执行（注意检查 `stop_hook_active` 字段防止死循环），适合无人值守的批处理场景。
 
-```
-核心建议
-你不需要自己从零写hooks。直接告诉Claude：「Write a hook that runs prettier after every file edit」，它会帮
-你生成配置并写入 .claude/settings.json。
-```
+
+> **小结**
+> 你不需要自己从零写hooks。直接告诉Claude：「Write a hook that runs prettier after every file edit」，它会帮
+> 你生成配置并写入 .claude/settings.json。
+
 ###### MCP：让Claude看到外面的世界
 
 Skills教Claude知识，Hooks保证执行确定性，但它们都在Claude Code的内部世界运作。如果你需要Claude直
@@ -2234,11 +2195,11 @@ MCP的配置存在项目根目录的 .mcp.json 中，可以跟代码一起提交
   }
 }
 ```
-```
-注意
-MCP服务器会获得对外部服务的访问权限。添加新的MCP前，确认你理解它会访问哪些数据。敏感token不要
-硬编码在 .mcp.json 里，用环境变量引用。
-```
+
+> **注意**
+> MCP服务器会获得对外部服务的访问权限。添加新的MCP前，确认你理解它会访问哪些数据。敏感token不要
+> 硬编码在 .mcp.json 里，用环境变量引用。
+
 ###### Plugins：打包好的扩展包
 
 Skills、Hooks、MCP可以各自独立使用，但组合起来才真正厉害。Plugins就是这种组合的打包形式。
@@ -2279,55 +2240,36 @@ Commands存在 .claude/commands/ 目录中。和skills不同的是，commands可
 输入 /commit-push-pr，Claude就会按照这个流程自动执行。因为command文件存在 .claude/commands/
 里，它会随Git一起提交，团队成员都能用。
 
-```
-Skills vs Commands选择指南
-两者有重叠，但定位不同。Skills更像「知识和能力」，Claude根据上下文自动应用或手动调用；Commands更
-像「宏」，包含预计算步骤，强调执行流程。经验法则：如果需要Claude「知道什么」，用skill；如果需要
-Claude「做一串事」，用command。
-```
+> **Skills 和 Commands 怎么选**：两者有重叠，但定位不同。Skills 更像「知识和套路」，由上下文触发或手动 `/skill`；Commands 更像「带预计算的宏」，强调一步步执行。需要它「知道什么」用 Skill；需要它「一口气做完一串事」用 Command。
+
 ###### 三种扩展机制的协作
 
 实际项目中，三种机制经常协同工作。一个完整的例子：
 
 
-假设你的团队有这样一个工作流：收到bug报告 → 定位问题 → 修复 → 跑测试 → 提交PR → 通知相关人。
+假设你的团队有这样一个工作流：收到 bug 报告 → 定位问题 → 修复 → 跑测试 → 提交 PR → 通知相关人。可以把它想成一条流水线，三种扩展各管一段：
 
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f0fdf4', 'primaryColor': '#bbf7d0', 'primaryTextColor': '#14532d', 'primaryBorderColor': '#22c55e', 'lineColor': '#16a34a', 'secondaryColor': '#dcfce7', 'tertiaryColor': '#ecfdf5', 'fillType0': '#cffafe', 'fillType1': '#e0e7ff', 'fillType2': '#fef3c7'}}}%%
+flowchart LR
+    A["Slack MCP<br/>收 bug 报告"] --> B["Skill fix-issue<br/>标准排查与修复"]
+    B --> C["Hook PostToolUse<br/>自动测试 + lint"]
+    C --> D["Slack MCP<br/>回复结果 / PR"]
+    style A fill:#e0f2fe,stroke:#0369a1
+    style B fill:#fef3c7,stroke:#b45309
+    style C fill:#fce7f3,stroke:#be185d
+    style D fill:#d1fae5,stroke:#047857
 ```
-Slack MCP
-```
-#### 接收bug报告 →
 
-```
-Skill
-```
-#### 修bug标准流程 →
+- **MCP（Slack）**：让 Claude 能读到报告并回写进度。  
+- **Skill（fix-issue）**：把「怎么修」固化成可重复流程。  
+- **Hook（PostToolUse）**：保证每次改完代码都会跑测试和格式化。
 
-```
-Hook
-```
-#### 自动跑测试+lint →
+单独用任何一个都有价值，组合起来就是一个完整的自动化 bug 修复流水线。
 
-```
-Slack MCP
-通知修复结果
-```
-```
-MCP （Slack）让Claude收到bug报告并能回复修复结果
-Skill （fix-issue）指导Claude按标准流程定位和修复问题
-Hook （PostToolUse）确保每次修改后都自动跑测试和格式化
-```
-单独用任何一个都有价值，组合起来就是一个完整的自动化bug修复流水线。
-
-```
-核心建议
-不要想着一上来就搭一套完整的扩展体系。从你最痛的那一个重复操作开始：总在口述规则？写个skill。总忘
-记跑lint？加个hook。总在手动倒腾数据？接个MCP。一个一个加，慢慢你的Claude Code就变成了一个为你
-量身定制的工作台。
-```
+> **小结**：不必一上来搭全套扩展。从最痛的那件重复事开始：总在口述规则就写 Skill；总忘跑 lint 就加 Hook；总在手动倒数据就接 MCP。一件件加，工作台会慢慢长成你自己的形状。
 
 ### 09 多 Agent 协作
-
-Multi-Agent Collaboration
 
 Claude Code最被低估的能力不是它写代码有多快，而是它可以同时跑很多个。学会并行之后，你的
 
@@ -2336,28 +2278,22 @@ Claude Code最被低估的能力不是它写代码有多快，而是它可以同
 ###### 一个人为什么要开那么多窗口
 
 Boris Cherny日常是这么干活的：本地开 5 个Claude Code实例（独立的git checkout），云端再开 5 到 10 个
-claude.ai/code网页会话，每个跑不同的任务。一个写新功能，一个修bug，一个写测试，一个重构，一个做代
+[claude.ai/code](https://claude.ai/code) 网页会话，每个跑不同的任务。一个写新功能，一个修bug，一个写测试，一个重构，一个做代
 码审查。同时进行。
 
-```
-                        你（一个人）
-                            │
-        ┌───────────────────┼─────────────────────┐
-        │                   │                     │
-   ┌────▼─────┐        ┌────▼─────┐         ┌────▼─────┐
-   │ 本地终端 │        │ 本地终端 │         │ 本地终端 │
-   │ worktree │        │ worktree │         │ worktree │
-   │   #1     │        │   #2     │         │   #3     │
-   │  feat-A  │        │  fix-B   │         │ refactor │
-   └──────────┘        └──────────┘         └──────────┘
-
-       ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-       │ Web #1   │  │ Web #2   │  │ Web #3   │  │ Web #N   │
-       │ docs     │  │ tests    │  │ review   │  │ ...      │
-       └──────────┘  └──────────┘  └──────────┘  └──────────┘
-                       claude.ai/code 云端
-
-       你的工作：分配任务、定期 review、合并 PR
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#fdf4ff', 'primaryColor': '#f5d0fe', 'primaryTextColor': '#581c87', 'primaryBorderColor': '#a855f7', 'lineColor': '#9333ea', 'secondaryColor': '#fae8ff', 'tertiaryColor': '#ede9fe', 'fillType0': '#ede9fe', 'fillType1': '#cffafe', 'fillType2': '#fef3c7'}}}%%
+flowchart TB
+    You["你 · 分配任务 / review / 合并 PR"]
+    You --> L1["本地 worktree #1<br/>feat-A"]
+    You --> L2["本地 worktree #2<br/>fix-B"]
+    You --> L3["本地 worktree #3<br/>refactor"]
+    You --> W["claude.ai/code<br/>https://claude.ai/code<br/>Web #1…#N · docs / tests / review …"]
+    style You fill:#fef3c7,stroke:#b45309
+    style L1 fill:#dbeafe,stroke:#1d4ed8
+    style L2 fill:#fee2e2,stroke:#b91c1c
+    style L3 fill:#d1fae5,stroke:#047857
+    style W fill:#fce7f3,stroke:#be185d
 ```
 
 我一开始觉得这也太夸张了。后来自己试了才理解，这不是炫技，是Boris给团队的第一条生产力建议： **做更多
@@ -2429,12 +2365,12 @@ session的容量。
 你甚至可以在prompt中加上「use subagents」，让Claude主动判断什么时候该把子任务分配给subagent。这
 会让Claude投入更多计算资源来完成复杂任务。
 
-```
-核心建议
-实用的subagent组合： security-reviewer （每次涉及认证、权限、数据存储时自动调用）+ verify-app （修改
-完成后自动启动应用并验证功能是否正常）。这两个覆盖了「写得对不对」和「跑得起来吗」两个最常见的验证
-需求。
-```
+
+> **小结**
+> 实用的subagent组合： security-reviewer （每次涉及认证、权限、数据存储时自动调用）+ verify-app （修改
+> 完成后自动启动应用并验证功能是否正常）。这两个覆盖了「写得对不对」和「跑得起来吗」两个最常见的验证
+> 需求。
+
 ###### Agent Teams：让它们自己协调
 
 Worktrees让你手动管理多个并行session，Subagents让主session调一个专家。Agent Teams更进一步：多个
@@ -2528,7 +2464,7 @@ iPhone通过Claude移动App启动会话，之后在桌面继续。
 **Claude Code on Web**
 
 
-开发环境在云端的话（或者你只是想在浏览器里用），可以通过 claude.ai/code 直接在浏览器中运行Claude
+开发环境在云端的话（或者你只是想在浏览器里用），可以通过 [claude.ai/code](https://claude.ai/code) 直接在浏览器中运行 Claude
 Code，不需要安装本地环境。
 
 **/loop：周期性自动跑**
@@ -2581,11 +2517,11 @@ Code的受众已经不局限于工程师了。
 **定期扫一眼，不要完全放羊。** 并行不等于不管。每隔15-20分钟看看各个session的进度，及时纠偏。一个
 session跑偏了及时停掉，比让它跑完再返工划算得多。
 
-```
-核心建议
-Boris的总结我很认同：把并行工作想象成管理一个远程团队。你不需要盯着每个人写每一行代码，但你需要清
-楚每个人在做什么、进度如何、有没有卡住。你的工作从写代码变成了做项目管理。
-```
+
+> **小结**
+> Boris的总结我很认同：把并行工作想象成管理一个远程团队。你不需要盯着每个人写每一行代码，但你需要清
+> 楚每个人在做什么、进度如何、有没有卡住。你的工作从写代码变成了做项目管理。
+
 
 ### 10 从零构建一个完整产品
 
@@ -2735,12 +2671,12 @@ app/api/auth/[...nextauth]/route.ts 配置 NextAuth，然后创建 lib/github.ts
 
 3. **AI 总结生成**
    拿真实的 commit 数据调用总结接口，检查 AI 生成的周报内容是否合理、是否有幻觉。
-```
-注意
-每做完一步就验证，这是我踩过最多坑之后总结出来的最重要的习惯。不要让Claude一口气写完所有代码再
-测。问题越早发现越容易修。我曾经让它连续写了 8 个文件，最后发现第 2 个文件的API路由就写错了，后面全
-废了。
-```
+
+> **注意**
+> 每做完一步就验证，这是我踩过最多坑之后总结出来的最重要的习惯。不要让Claude一口气写完所有代码再
+> 测。问题越早发现越容易修。我曾经让它连续写了 8 个文件，最后发现第 2 个文件的API路由就写错了，后面全
+> 废了。
+
 ###### Phase 3：让它好看起来
 
 功能跑通了，但界面大概率很丑。正常。我做任何产品都是先让功能跑起来，再管好不好看。
@@ -2767,11 +2703,11 @@ layout issues. The share button should be full-width on mobile."
 Claude会自己调整浏览器视口大小（如果你用了VS Code集成），或者直接修改Tailwind的响应式类名。
 
 
-```
-核心建议
-UI打磨阶段最高效的做法是：先把所有问题一次性列出来，让Claude批量修改，而不是改一个看一个。批量反
-馈能让Claude更好地理解整体设计意图。
-```
+
+> **小结**
+> UI打磨阶段最高效的做法是：先把所有问题一次性列出来，让Claude批量修改，而不是改一个看一个。批量反
+> 馈能让Claude更好地理解整体设计意图。
+
 ###### Phase 4：扩展能力实战
 
 核心产品已经能用了。现在是07内容的实战时间：给项目加上Skills、MCP和Hooks。
@@ -3088,11 +3024,11 @@ push，通过Execute + Bash就能操作一切。 **这也是Claude Code能在几
 更要命的是：长会话如果经历了多次压缩， **信息损失会累积** 。每压缩一次就损失一点，几次之后，最早的上下
 文可能只剩一个模糊的影子。
 
-```
-核心建议
-实操建议：重要的约束和要求，写进CLAUDE.md而不是只在对话里说一次。对话会被压缩，但CLAUDE.md每
-次都会重新读取。这也呼应了前面「三层模型」里的结论：把信息沉淀到Context层。
-```
+
+> **小结**
+> 实操建议：重要的约束和要求，写进CLAUDE.md而不是只在对话里说一次。对话会被压缩，但CLAUDE.md每
+> 次都会重新读取。这也呼应了前面「三层模型」里的结论：把信息沉淀到Context层。
+
 **权限系统：不只是Yes/No**
 
 Auto模式背后不是简单的全放行。系统内部有一个分类器，把每个操作的风险分成LOW、MEDIUM、HIGH三
@@ -3148,11 +3084,11 @@ Claude Code解决了「怎么写」的问题，但「写什么」这个问题，
 产品解决什么问题？目标用户是谁？核心体验是什么？哪些功能必须有，哪些可以砍掉？
 
 
-```
-核心建议
-如果你正在焦虑「AI会不会取代我」，可以换个角度想：学会定义需求、设计交互、评审质量。这些能力不会因
-为AI变强而贬值。
-```
+
+> **小结**
+> 如果你正在焦虑「AI会不会取代我」，可以换个角度想：学会定义需求、设计交互、评审质量。这些能力不会因
+> 为AI变强而贬值。
+
 ###### 迭代这么快，怎么跟
 
 回看 Claude Code 的功能时间线，迭代速度确实很快：
@@ -3182,11 +3118,11 @@ Claude Code解决了「怎么写」的问题，但「写什么」这个问题，
 - Lenny's Podcast：Boris 深度谈产品设计和 AI 编程的未来
 - Pragmatic Engineer：技术视角的深度对话
 - YC Lightcone：创业者视角，聊 AI 工具如何改变构建产品的方式
-```
-注意
-不要试图跟踪每一个小更新。时间应该花在用工具构建东西上，不是花在研究工具本身上。每月花 30 分钟浏览
-一次changelog就够了。
-```
+
+> **注意**
+> 不要试图跟踪每一个小更新。时间应该花在用工具构建东西上，不是花在研究工具本身上。每月花 30 分钟浏览
+> 一次changelog就够了。
+
 真正该关注的不是具体功能变化，而是方向。过去一年半的演进，有三条线索始终没变：
 
 1. **自主性持续增强。** 从需要你逐步指令，到能自主规划和执行。
