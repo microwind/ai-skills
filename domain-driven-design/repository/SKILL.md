@@ -224,6 +224,17 @@ class InMemoryOrderRepository(OrderRepository):
 3. **返回领域对象** — 不返回数据库实体或 Map
 4. **保存完整聚合** — save(order) 包括其所有 OrderItems
 
+## 常见误区
+
+❌ **返回数据库实体 / DO**——`UserRepository.findById()` 返回 `UserDO`
+→ 仓储必须返回领域对象；DO 不出仓储层
+
+❌ **DAO 风格的接口**——`findAllByStatusAndCreatedAtBetweenAndTypeIn(...)`
+→ 接口用领域意图命名：`findActiveByCustomer()`、`findPendingForReview()`
+
+❌ **一个仓储管多个聚合**——`OrderRepository` 同时保存 Order、Customer、Product
+→ 一聚合一仓储；跨聚合的协同由应用服务编排多个仓储调用
+
 ## 与其他DDD概念的关系
 
 | 概念 | 关系 |

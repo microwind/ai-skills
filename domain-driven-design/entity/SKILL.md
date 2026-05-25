@@ -355,6 +355,8 @@ class Order:
 
 在实际工程中，实体的代码形态可以按**携带业务逻辑的多少**分为四种，选型直接影响领域层的厚度与可维护性。
 
+> **术语对照**：英文 DDD 圈通常只区分两种——**Anemic Domain Model（贫血领域模型，Fowler 视为反模式）** 与 **Rich Domain Model（充血模型）**。下表"四种血液模型"是中文工程社区的进一步细化划分；阅读 Evans / Vernon 原著时，请把"贫血 / 失血"都对应到 Fowler 的 Anemic 概念，不要混淆。
+
 | 形态 | 包含内容 | 评价 |
 |------|----------|------|
 | **失血模型** | 仅有数据字段和 getter/setter（Java 中的 POJO） | 不算领域对象，只是数据容器 |
@@ -439,6 +441,54 @@ public class Order {
 | 可变性 | 通常可变 | 不可变 |
 | 生命周期 | 有明确生命周期 | 无生命周期 |
 | 例子 | User, Order | Money, Email, Address |
+
+## 实体 vs DTO
+
+实体经常被误用为 DTO（数据传输对象），导致领域层退化为"带方法的字段袋"。二者必须严格区分：
+
+| 维度 | Entity（实体） | DTO（数据传输对象） |
+|------|---------------|--------------------|
+| 所属层 | 领域层 | 接口层 / 应用层 |
+| 目的 | 承载业务规则与状态转换 | 在层与层、进程与进程之间搬运数据 |
+| 行为 | 有业务方法（pay、ship、approve） | 通常只有字段 + getter/setter |
+| 不变量 | 自我保护、构造即合法 | 不维护不变量，由发送方负责 |
+| 身份 | 有领域标识（OrderId） | 通常无标识 |
+| 序列化 | 不直接序列化（避免暴露内部结构） | 为序列化而生（JSON、ProtoBuf） |
+| 生命周期 | 与业务对象一致，长久存在 | 一次请求/响应即弃 |
+
+> **判别关键**：如果一个类**既要被序列化为 HTTP 响应，又要承载业务规则**，几乎可以肯定是把 Entity 和 DTO 揉在了一起——拆开。
+
+```java
+// ❌ Entity 与 DTO 混用
+@RestController
+public class OrderController {
+    @GetMapping("/orders/{id}")
+    public Order getOrder(@PathVariable String id) {
+        return orderRepository.findById(id);   // 直接把 Entity 序列化返回
+    }
+}
+
+// ✅ 用 DTO 隔离边界
+@RestController
+public class OrderController {
+    @GetMapping("/orders/{id}")
+    public OrderDTO getOrder(@PathVariable String id) {
+        Order order = orderRepository.findById(id);
+        return OrderDTO.from(order);            // 在边界处转换
+    }
+}
+```
+
+## 常见误区
+
+❌ **用属性判等**——`equals` 比对 `name + email`，导致两个不同 `userId` 的 User 因属性相同被认为相等
+→ 实体的相等性永远基于身份标识，与任何属性无关
+
+❌ **全字段 setter 暴露**——实体退化为数据袋，业务规则散落到 Service
+→ 暴露**业务方法**（pay、ship、cancel），让状态变化必经规则校验
+
+❌ **持久化可计算字段**——把 `totalAmount` 字段化并要求外部维护一致性
+→ 能从其他字段算出的不必字段化；必须字段化时由聚合根内部计算与维护
 
 ---
 

@@ -124,6 +124,17 @@ public OrderDTO placeOrder(PlaceOrderCommand cmd) {
 3. **输入用 Command/DTO** — 不传领域对象给外部
 4. **输出用 DTO** — 不直接返回领域对象
 
+## 常见误区
+
+❌ **应用服务里写业务规则**——`if (order.getStatus() != PENDING) throw ...`
+→ 业务规则归领域对象，应用服务只调用 `order.pay()`
+
+❌ **直接返回领域对象**——把 Order 序列化为 HTTP 响应
+→ 在边界处转换为 DTO，避免把内部模型暴露给外部
+
+❌ **应用服务调用另一个应用服务**——同层耦合、事务边界混乱
+→ 一个用例 = 一个应用服务方法；要复用就抽到领域服务或下层
+
 ## 与其他DDD概念的关系
 
 | 概念 | 关系 |

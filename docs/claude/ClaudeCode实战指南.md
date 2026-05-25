@@ -2,6 +2,18 @@
 
 > 这些都是日常工作里真的遇到过的场景。提示词、步骤、踩过的坑都放在这里，方便备查。
 
+## 提示词框架使用说明
+
+本指南中的提示词示例使用了 **BROKE、CRISPE、ROBOTIC** 等框架，这些框架有助于结构化提示词，但**并非必须**。
+
+**框架选择原则**：
+- **CRISPE**（Context-Role-Instructions-Steps-Preferences-Example）：适合需要明确步骤和偏好的场景（选型、方案设计、测试）
+- **BROKE**（Background-Role-Objective-Key Information-Example）：适合需要背景、角色、目标、关键信息的场景（风险评估、问题诊断、澄清）
+- **ROBOTIC**（Role-Objective-Background-Output format-Tone-Instructions-Constraints）：适合需要明确输出格式、语气、约束的场景（代码生成、配置、文档）
+- **Chain-of-Thought / ICIO**（Instruction-Context-Input-Output）：适合需要逐步推理的场景
+- **Plan 模式**：适合复杂任务，先让 Claude 制定计划，再逐步执行和调整
+
+**重要**：框架是工具，不是约束。简单场景直接描述需求即可，不必强行套用框架。关键是**目标、上下文、约束**至少占两样。
 
 ## 完整项目实战
 
@@ -9,21 +21,55 @@
 
 一个人 2 周内上线电商 MVP，要覆盖商品、购物车、订单、支付四个核心模块。技术栈完全没定，先让 Claude 给个能落地的方案。
 
-#### 第 1 轮：选型
+#### 第 1 轮：选型（CRISPE 框架）
 
 ```
-我：要做一个电商 MVP，时间只有 2 周，1 个全栈在写。
+# Context（上下文）
+要做一个电商 MVP，时间只有 2 周，1 个全栈在写。
 核心功能：商品列表、购物车、订单、支付。技术栈还没定。
+
+# Role（角色）
+你是一位全栈架构师，擅长快速 MVP 开发和技术选型。
+
+# Instructions（指令）
 给一套能快速搭起来、后面也好迭代的方案，列出选型理由。
+
+# Steps（步骤）
+1. 分析 2 周时间约束下的技术选型优先级
+2. 给出前端、后端、数据库、支付、部署的完整技术栈
+3. 说明每个选型的理由，特别关注开发速度和后续扩展性
+4. 列出潜在风险和应对方案
+
+# Preferences（偏好）
+- 优先选择成熟生态和托管服务
+- 避免需要大量配置的工具
+- 考虑后续迭代成本
+
+# Example（示例）
+类似的项目可以参考：Next.js + Vercel + Supabase 的快速开发模式
 ```
 
 Claude 给的方案（节选）：前端 Next.js 14 + shadcn/ui，后端 Node + Express + MongoDB，支付走 Stripe，部署 Vercel + Railway。理由是这套栈生态成熟、部署最省事，2 周内能跑通。
 
-#### 第 2 轮：质疑选型，看是否撑得住后续扩展
+#### 第 2 轮：质疑选型，看是否撑得住后续扩展（BROKE 框架）
 
 ```
-我：MongoDB 这块我有点犹豫。订单和库存对一致性要求高，
-PostgreSQL 是不是更稳？另外 Stripe 在国内能用吗，要不要预留替换空间?
+# Background（背景）
+你之前建议用 MongoDB + Stripe。但我有几点顾虑需要重新评估。
+
+# Role（角色）
+你是一位技术架构师，需要从长期维护和扩展性角度重新审视选型。
+
+# Objective（目标）
+重新评估 MongoDB 和 Stripe 的适用性，给出更稳妥的替代方案。
+
+# Key Information（关键信息）
+- 订单和库存对一致性要求高，涉及事务和外键约束
+- Stripe 在国内不能直接收人民币
+- 需要预留支付渠道的替换空间
+
+# Example（示例）
+类似项目通常用 PostgreSQL 处理订单，用适配器模式抽象支付层
 ```
 
 Claude 同意 PostgreSQL 更合适：订单/库存涉及事务和外键约束，Mongo 处理起来要绕。Stripe 国内不能直接收人民币，建议把支付层抽象成 `PaymentProvider` 接口，先实现 `StripeProvider`，上线时按需替换 `WechatPayProvider`、`AlipayProvider`。
@@ -58,37 +104,96 @@ graph TB
     class E,F tp;
 ```
 
-#### 第 3 轮：让 Claude 生成项目骨架
+#### 第 3 轮：让 Claude 生成项目骨架（ROBOTIC 框架）
 
 ```
-我：按上面的栈生成项目骨架。要求：
+# Role（角色）
+你是一位前端工程化专家，擅长项目架构和工具链配置。
+
+# Objective（目标）
+基于确定的技术栈生成完整的项目骨架。
+
+# Background（背景）
+技术栈：Next.js 14 + PostgreSQL + Prisma + Stripe（适配器模式）+ Vercel/Railway
+时间约束：2 周内完成 MVP
+
+# Output format（输出格式）
+1. 完整的目录结构
+2. pnpm-workspace.yaml 配置
+3. 初始 Prisma schema（User / Product / Cart / Order 四个模型）
+4. CLAUDE.md 文档
+5. ESLint + Prettier + Husky 配置
+
+# Tone（语气）
+专业、简洁、可直接执行
+
+# Instructions（指令）
 - monorepo 结构（pnpm workspace）
 - apps/web（Next.js）、packages/db（Prisma schema）、packages/payment（适配器）
 - 预置 ESLint + Prettier + Husky
 - 写一个 CLAUDE.md 把这些约定固化
+
+# Constraints（约束）
+- 所有配置文件必须可直接使用，无需额外修改
+- Prisma schema 要包含必要的关系和索引
+- CLAUDE.md 要包含项目约定和开发规范
 ```
 
 Claude 输出了目录、`pnpm-workspace.yaml`、初始 Prisma schema（User / Product / Cart / Order 四个模型）和一份精简的 `CLAUDE.md`。我在它生成的 CLAUDE.md 里又补了"金额单位统一用 cents（避免浮点）"和"所有 API 路由必须经 zod 校验"两条。
 
-#### 第 4 轮：高风险模块单独开 session
+#### 第 4 轮：高风险模块单独开 session（BROKE 框架）
 
 下单和支付链路是最容易出问题的地方，单独开 session 慢慢推：
 
 ```
-我：实现下单接口。要求：
-1. 事务里做库存扣减 + 订单写入 + 创建 Stripe PaymentIntent
-2. 任一步失败整个事务回滚
-3. Stripe 异步 webhook 回来后才把订单状态置为 PAID
-4. 幂等：同一个 cart_id 重复下单返回同一个 order_id
+# Background（背景）
+下单和支付是电商系统的核心链路，涉及库存扣减、订单创建、支付处理等多个环节，容易出现并发、幂等、事务等问题。
+
+# Role（角色）
+你是一位后端架构师，擅长分布式事务和高并发场景的处理。
+
+# Objective（目标）
+实现一个可靠的下单接口，确保数据一致性和系统稳定性。
+
+# Key Information（关键信息）
+- 需要在事务里做库存扣减 + 订单写入 + 创建 Stripe PaymentIntent
+- 任一步失败整个事务回滚
+- Stripe 异步 webhook 回来后才把订单状态置为 PAID
+- 幂等：同一个 cart_id 重复下单返回同一个 order_id
+- PaymentIntent 创建是网络请求，不能放在数据库事务里
+
+# Example（示例）
+类似的两阶段提交模式：先在事务里建订单（状态 PENDING_PAYMENT），事务提交后再创建 PaymentIntent
 ```
 
 Claude 给的实现里漏了一个细节——`PaymentIntent` 创建调用是网络请求，放在数据库事务里会拉长事务持续时间。我追问后改成两阶段：先在事务里建订单（状态 `PENDING_PAYMENT`），事务提交后再创建 `PaymentIntent`，更新订单的 `payment_intent_id` 字段。
 
-#### 第 5 轮：上线前自查
+#### 第 5 轮：上线前自查（CRISPE 框架）
 
 ```
-我：用 code-review Skill 扫一遍下单和支付相关代码，
-重点看：并发竞态、金额计算、敏感信息日志、Stripe webhook 验签。
+# Context（上下文）
+项目即将上线，需要对下单和支付相关代码进行全面审查，确保没有遗漏的安全和稳定性问题。
+
+# Role（角色）
+你是一位代码审查专家，擅长发现并发、安全、性能等问题。
+
+# Instructions（指令）
+用 code-review Skill 扫一遍下单和支付相关代码，重点检查以下维度。
+
+# Steps（步骤）
+1. 检查并发竞态问题（库存扣减、订单创建）
+2. 检查金额计算是否正确（避免浮点数精度问题）
+3. 检查敏感信息是否泄露到日志
+4. 检查 Stripe webhook 是否验签
+5. 给出优先级排序的修复清单
+
+# Preferences（偏好）
+- 优先标记高风险问题
+- 给出具体的修复建议
+- 列出修复的优先级
+
+# Example（示例）
+常见问题：库存扣减没用 SELECT FOR UPDATE、金额计算用 float、错误日志包含信用卡信息、webhook 没校验签名
 ```
 
 Claude 报出 4 个问题：库存扣减没用 `SELECT FOR UPDATE`（并发下卖超）、运费计算用了 float（要换 decimal）、错误日志里把信用卡 fingerprint 打了出来、webhook 没校验 `stripe-signature` header。修完后才上线。
@@ -113,15 +218,26 @@ Claude 报出 4 个问题：库存扣减没用 `SELECT FOR UPDATE`（并发下�
 
 已有 SaaS 平台，要在 3 天内加一个团队协作模块。重点是不能破坏现有数据隔离。
 
-#### 第 1 轮：先问风险，不直接要方案
+#### 第 1 轮：先问风险，不直接要方案（BROKE 框架）
 
 ```
-我：现有 SaaS（React 18 + Node.js）要加团队协作模块：
+# Background（背景）
+现有 SaaS（React 18 + Node.js）要加团队协作模块，涉及团队创建/管理、项目管理、实时评论 @ 提醒等功能，数据严格按租户隔离，100+ 并发。
+
+# Role（角色）
+你是一位系统架构师，擅长评估架构风险和设计复杂系统。
+
+# Objective（目标）
+先识别风险点，说明怎么破坏现有架构最容易，再给出解决方案。
+
+# Key Information（关键信息）
 - 团队创建/管理、项目管理
 - 实时评论 @ 提醒
 - 数据严格按租户隔离，100+ 并发
+- 不能破坏现有数据隔离
 
-先告诉我有什么风险点，怎么破坏现有架构最容易，再给方案。
+# Example（示例）
+类似功能的常见风险：实时通信选型容易跑偏、权限要在数据库层做行级隔离、@ 提醒的邮件发送如果同步写会让接口变慢
 ```
 
 Claude 列出的风险：
@@ -130,11 +246,31 @@ Claude 列出的风险：
 3. @ 提醒的邮件/站内信发送如果同步写在评论接口里，会让评论 P95 变长
 4. 现有 user 表如果没有 `team_id` 概念，加协作会引入循环依赖
 
-#### 第 2 轮：让 Claude 给方案，并指出哪些是"成熟方案"
+#### 第 2 轮：让 Claude 给方案，并指出哪些是"成熟方案"（CRISPE 框架）
 
 ```
-我：针对这 4 个风险，给一套现成轮子能解决的方案。
-不要从零造，能用托管服务就用。
+# Context（上下文）
+基于之前识别的 4 个风险，需要给出解决方案。
+
+# Role（角色）
+你是一位技术选型专家，擅长选择成熟的技术方案。
+
+# Instructions（指令）
+针对这 4 个风险，给一套现成轮子能解决的方案。不要从零造，能用托管服务就用。
+
+# Steps（步骤）
+1. 针对每个风险给出对应的解决方案
+2. 说明每个方案为什么是"成熟方案"
+3. 列出具体的工具/服务名称
+4. 说明如何与现有系统集成
+
+# Preferences（偏好）
+- 优先选择托管服务
+- 避免自己搭建基础设施
+- 选择有良好文档和社区支持的方案
+
+# Example（示例）
+实时通信可以用 Supabase Realtime，权限可以用 PostgreSQL RLS，消息队列可以用 BullMQ
 ```
 
 Claude 的方案：
@@ -143,11 +279,35 @@ Claude 的方案：
 - @ 提醒发送走消息队列异步化（用现有 BullMQ）
 - 加一张 `team_memberships` 关联表，user 表不动
 
-#### 第 3 轮：评审 Schema
+#### 第 3 轮：评审 Schema（ROBOTIC 框架）
 
 ```
-我：把 schema 详细写出来，特别是 RLS 策略。
-我要看一下"用户只能看到自己所在 team 的项目"这条策略具体怎么写。
+# Role（角色）
+你是一位数据库架构师，擅长 PostgreSQL RLS 策略设计。
+
+# Objective（目标）
+把 schema 详细写出来，特别是 RLS 策略。
+
+# Background（背景）
+需要实现"用户只能看到自己所在 team 的项目"这条策略，确保数据严格按租户隔离。
+
+# Output format（输出格式）
+1. 完整的 SQL schema（表结构）
+2. RLS 策略的完整 SQL
+3. 应用层如何设置 current_user_id 的示例
+4. 边界情况的处理方案（如管理员跨租户查询）
+
+# Tone（语气）
+技术性强、精确、可执行
+
+# Instructions（指令）
+- 把 schema 详细写出来，特别是 RLS 策略
+- 我要看一下"用户只能看到自己所在 team 的项目"这条策略具体怎么写
+
+# Constraints（约束）
+- RLS 策略必须在数据库层实现
+- 不能依赖应用层过滤
+- 要考虑管理员跨租户查询的场景
 ```
 
 ```sql
@@ -186,14 +346,28 @@ erDiagram
     }
 ```
 
-#### 第 4 轮：实时评论上线后才发现的坑
+#### 第 4 轮：实时评论上线后才发现的坑（BROKE 框架）
 
 实现过程中触发了一个原本没预期的问题：
 
 ```
-我：评论实现完了，但本地测试时发现删除评论后，其他用户的页面没有自动消失。
-后端 DELETE 接口确实执行了，Supabase Realtime 也推了 DELETE 事件。
-帮我看下前端订阅代码哪里有问题。
+# Background（背景）
+评论实现完了，但本地测试时发现删除评论后，其他用户的页面没有自动消失。后端 DELETE 接口确实执行了，Supabase Realtime 也推了 DELETE 事件。
+
+# Role（角色）
+你是一位前端调试专家，擅长定位实时通信相关的问题。
+
+# Objective（目标）
+找出前端订阅代码的问题，确保删除评论后其他用户页面能自动更新。
+
+# Key Information（关键信息）
+- 后端 DELETE 接口执行成功
+- Supabase Realtime 推了 DELETE 事件
+- 其他用户页面没有自动消失
+- 前端只订阅了 INSERT 和 UPDATE
+
+# Example（示例）
+Supabase Realtime 的 * 通配在某些 SDK 版本里不生效，要显式列出三个事件
 ```
 
 Claude 看完后定位到：前端只订阅了 `INSERT` 和 `UPDATE`，漏了 `DELETE`。Supabase Realtime 的 `*` 通配在某些 SDK 版本里不生效，要显式列出三个事件。修完一行代码搞定。
@@ -207,37 +381,177 @@ Claude 看完后定位到：前端只订阅了 `INSERT` 和 `UPDATE`，漏了 `D
 
 ---
 
-### 场景 3：移动 App 跨平台开发
+### 场景 3：Plan 规划模式（复杂任务）
+
+Plan 模式适合复杂任务：先让 Claude 制定计划，再逐步执行和调整。避免一次性甩大需求，导致输出不可控。
+
+#### 第 1 轮：让 Claude 制定计划
+
+```
+我要重构用户认证模块，涉及以下改动：
+- 从 JWT 切换到 Session
+- 引入 Redis 存储会话
+- 添加 OAuth2 登录（Google/GitHub）
+- 更新所有相关 API 的鉴权逻辑
+
+先制定一个详细的执行计划，包括：
+1. 改动范围和风险评估
+2. 执行步骤和依赖关系
+3. 每步的验证方法
+4. 回滚方案
+```
+
+Claude 给出的计划：
+
+**风险评估**：
+- 高风险：所有 API 鉴权逻辑改动，影响面大
+- 中风险：Redis 集成，需要考虑可用性
+- 低风险：OAuth2 集成，独立模块
+
+**执行计划**：
+1. Day 1：Redis 集成 + 会话存储基础（独立验证）
+2. Day 2：OAuth2 登录流程（独立验证）
+3. Day 3：API 鉴权逻辑切换（分批，先非核心 API）
+4. Day 4：核心 API 鉴权切换 + 全量回归
+5. Day 5：JWT 清理 + 监控告警
+
+#### 第 2 轮：质疑计划，调整优先级
+
+```
+Day 3 分批切 API 的风险太高，容易导致线上问题。
+调整一下：
+1. 先在测试环境完整跑一遍
+2. 用灰度发布，先切 10% 流量
+3. 保留 JWT 作为降级方案
+```
+
+Claude 调整后的计划：
+- 增加"测试环境完整验证"步骤
+- Day 3 改为"灰度发布 10% → 50% → 100%"
+- 添加"JWT 降级开关"，灰度期间可快速回切
+
+#### 第 3 轮：逐步执行，每步验证
+
+```
+开始执行 Day 1：Redis 集成。
+要求：
+1. 只做 Redis 集成，不动其他逻辑
+2. 写一个简单的 set/get 测试验证
+3. 确认 Redis 故障时的降级策略
+```
+
+Claude 完成 Redis 集成后，继续下一步。
+
+#### 第 4 轮：中途发现问题，调整计划
+
+```
+OAuth2 集成时发现 Google 的回调 URL 需要域名，但我们还在开发环境。
+调整计划：
+1. 先跳过 OAuth2，专注 Session 切换
+2. OAuth2 改到第二阶段
+3. 先用本地测试账号验证流程
+```
+
+Claude 同意调整，更新计划并继续执行。
+
+**Plan 模式的价值**：
+- 把复杂任务拆解成可验证的小步
+- 中途发现问题可以灵活调整
+- 每步都有验证点，风险可控
+- 避免一次性大改动导致的灾难
+
+---
+
+### 场景 4：移动 App 跨平台开发
 
 电商 App 要 iOS、Android 都上，预算和时间都紧。
 
-#### 第 1 轮：方案对比
+#### 第 1 轮：方案对比（CRISPE 框架）
 
 ```
-我：电商 App，iOS 和 Android 都要，预算有限，时间紧。
-列三个候选方案对比：React Native、Flutter、各写一套原生。
-告诉我哪个最合适，理由是什么。
+# Context（上下文）
+电商 App，iOS 和 Android 都要，预算有限，时间紧。
+
+# Role（角色）
+你是一位移动端技术选型专家，擅长跨平台开发方案评估。
+
+# Instructions（指令）
+列三个候选方案对比：React Native、Flutter、各写一套原生。告诉我哪个最合适，理由是什么。
+
+# Steps（步骤）
+1. 列出三个方案的优缺点对比
+2. 从开发成本、维护成本、性能、生态成熟度等维度评估
+3. 给出最终推荐方案
+4. 说明推荐理由和潜在风险
+
+# Preferences（偏好）
+- 优先考虑开发速度和成本
+- 考虑团队现有技术栈
+- 关注长期维护成本
+
+# Example（示例）
+如果团队已有 React 经验，React Native 可能是更好的选择
 ```
 
 Claude 的对比结论：React Native 最合适。理由是团队已有 React 经验（学习成本最低）、Expo 把支付/推送/相机封装好了、热更新能避免每次小改都走 App Store 审核。Flutter 性能更好但要学 Dart，原生方案双倍工作量，都不适合当前情况。
 
-#### 第 2 轮：Expo Managed 还是 Bare Workflow
+#### 第 2 轮：Expo Managed 还是 Bare Workflow（BROKE 框架）
 
 ```
-我：用 Expo 的话，Managed 工作流就够吗？
-我之前听说要接某些原生 SDK（比如统计、支付）的话，Managed 会受限。
+# Background（背景）
+用 Expo 的话，Managed 工作流就够吗？我之前听说要接某些原生 SDK（比如统计、支付）的话，Managed 会受限。
+
+# Role（角色）
+你是一位 React Native 专家，熟悉 Expo 的工作流和原生模块集成。
+
+# Objective（目标）
+评估 Expo Managed 工作流是否够用，如果不够用，什么时候需要切换到 Bare Workflow。
+
+# Key Information（关键信息）
+- 需要接 Stripe 支付
+- 需要推送通知
+- 需要相机功能
+- 可能需要接统计 SDK
+
+# Example（示例）
+Expo SDK 50 之后大部分常见原生模块都有官方支持，只有需要自己写原生模块时才需要 Bare
 ```
 
 Claude 解释：Expo SDK 50 之后大部分常见原生模块都有官方支持（Stripe、Notifications、Camera 都覆盖了），Managed 够用。只有需要自己写原生模块或接非常小众的 SDK 时才需要 Bare。结论是先 Managed，遇到不行再 prebuild 切到 Bare（这条路是单向的，但 prebuild 工具能自动处理）。
 
-#### 第 3 轮：项目骨架 + 离线策略
+#### 第 3 轮：项目骨架 + 离线策略（ROBOTIC 框架）
 
 ```
-我：生成项目骨架。要求：
+# Role（角色）
+你是一位 React Native 项目架构师，擅长 Expo 和离线策略设计。
+
+# Objective（目标）
+生成项目骨架，包含离线浏览功能。
+
+# Background（背景）
+电商 App 需要支持离线浏览商品列表，提升用户体验。
+
+# Output format（输出格式）
+1. 完整的项目目录结构
+2. package.json 配置
+3. Expo Router 配置
+4. React Query 配置
+5. 离线缓存实现代码
+6. MMKV 持久化配置
+
+# Tone（语气）
+技术性强、精确、可直接执行
+
+# Instructions（指令）
 - TypeScript + Expo Router（不要 React Navigation 老式写法）
 - 状态管理用 React Query
 - 商品列表要支持离线浏览（缓存 100 件最近浏览过的商品）
-- 用 AsyncStorage 持久化 Query Cache
+- 用 MMKV 持久化 Query Cache（AsyncStorage 性能不够）
+
+# Constraints（约束）
+- 必须使用 Expo Router
+- 离线缓存要按 query key 分片存储
+- 缓存策略要考虑性能和存储空间
 ```
 
 Claude 生成的骨架里漏了一个细节——`AsyncStorage` 存大对象有性能问题（每次都是全量序列化）。我追问后改用 `MMKV`（同步、快 10 倍），并按 query key 分片存储。
@@ -281,14 +595,31 @@ graph TB
     class H,I na;
 ```
 
-#### 第 4 轮：上架前再让 Claude 过一遍审核风险
+#### 第 4 轮：上架前再让 Claude 过一遍审核风险（CRISPE 框架）
 
 ```
-我：准备提交 App Store / Google Play。帮我列一下两个平台最常拒审的点，
-对照我们的代码看看有没有命中。重点关注：
-- 隐私政策、权限申请
+# Context（上下文）
+准备提交 App Store / Google Play，需要确保符合审核规范。
+
+# Role（角色）
+你是一位移动应用审核专家，熟悉 App Store 和 Google Play 的审核政策。
+
+# Instructions（指令）
+帮我列一下两个平台最常拒审的点，对照我们的代码看看有没有命中。
+
+# Steps（步骤）
+1. 列出 App Store 最常拒审的点
+2. 列出 Google Play 最常拒审的点
+3. 对照我们的代码检查是否命中
+4. 给出修复建议
+
+# Preferences（偏好）
+- 重点关注隐私政策、权限申请
 - IAP（我们没用，是不是要解释清楚）
 - 后台任务、推送内容
+
+# Example（示例）
+常见拒审点：隐私政策跳转、相机权限的 NSCameraUsageDescription 文案、未使用 IAP 但有付费功能需声明走外部支付
 ```
 
 Claude 列了 6 个常见拒审点（隐私政策跳转、相机权限的 NSCameraUsageDescription 文案、未使用 IAP 但有付费功能需声明走外部支付、推送权限请求时机过早、深色模式适配、儿童隐私 COPPA），其中 3 个命中了。逐个改完后两次审核都过了。
@@ -337,16 +668,28 @@ sequenceDiagram
 
 接手一个项目，`src/services/UserService.ts` 单文件 2000 行，鉴权、邮件、日志全混在一起。下面是和 Claude 一起一步步剥离它的全过程。
 
-#### 第 1 步：让 Claude 摸清问题，自己别先下结论
+#### 第 1 步：让 Claude 摸清问题，自己别先下结论（BROKE 框架）
 
 不要一上来就问"怎么拆"，先问"有什么问题"——这样能拿到 Claude 自己的判断，比你强行命令它按你的想法做更可靠。
 
 ```
-我：这个项目代码太乱了，先看 src/services/UserService.ts，2000 行。
-不要急着改，先回答我三个问题：
-1. 这个文件混了几类职责？分别在哪些行附近？
-2. 最严重的代码问题是什么（top 3）？
-3. 如果要重构，从哪里下手投入产出比最高？
+# Background（背景）
+这个项目代码太乱了，先看 src/services/UserService.ts，2000 行。
+
+# Role（角色）
+你是一位代码重构专家，擅长分析代码结构和识别问题。
+
+# Objective（目标）
+不要急着改，先回答我三个问题，帮我摸清问题。
+
+# Key Information（关键信息）
+- 文件：src/services/UserService.ts，2000 行
+- 需要分析职责混用情况
+- 需要识别最严重的问题
+- 需要给出重构优先级
+
+# Example（示例）
+类似的问题通常包括：职责混用、类型缺失、错误处理不一致、测试覆盖不足
 ```
 
 Claude 读完给出的判断：
@@ -354,13 +697,36 @@ Claude 读完给出的判断：
 - **Top 3 问题**：全 `any` 类型、错误处理散落各处（70+ 个不一致的 try-catch）、0 测试覆盖
 - **下手顺序**：先按职责拆 → 再处理重复 → 最后补类型和测试。先拆是因为后两件事在 2000 行单文件里做没法 review
 
-#### 第 2 步：拆 AuthService（保持外部接口不变）
+#### 第 2 步：拆 AuthService（保持外部接口不变）（ROBOTIC 框架）
 
 ```
-我：先把认证相关的代码拆到 AuthService。要求：
-1. 保持所有调用方的 import 路径暂时不变（用 re-export 桥接）
-2. 提取后写一个 import 兼容层，让现有 controller 不用改
-3. 列出所有需要后续删除的"临时 re-export"，方便我们之后清理
+# Role（角色）
+你是一位代码重构专家，擅长渐进式重构和接口兼容。
+
+# Objective（目标）
+先把认证相关的代码拆到 AuthService，保持外部接口不变。
+
+# Background（背景）
+需要重构 2000 行的 UserService，先拆出认证相关代码。保持兼容性是关键，避免大量 git diff。
+
+# Output format（输出格式）
+1. AuthService 完整代码
+2. UserService 中的 re-export 桥接代码
+3. 需要后续删除的"临时 re-export"清单
+4. 迁移步骤说明
+
+# Tone（语气）
+精确、可执行、标注清晰
+
+# Instructions（指令）
+- 保持所有调用方的 import 路径暂时不变（用 re-export 桥接）
+- 提取后写一个 import 兼容层，让现有 controller 不用改
+- 列出所有需要后续删除的"临时 re-export"，方便我们之后清理
+
+# Constraints（约束）
+- 必须标注 @deprecated
+- 不能破坏现有功能
+- 桥接层要清晰标注"待清理"
 ```
 
 要求 "临时桥接" 这种细节很关键——直接拆 import 会让 git diff 爆炸，没法 review。
@@ -403,14 +769,31 @@ export class AuthService {
 export { login } from './AuthService';
 ```
 
-#### 第 3 步：让 Claude 自己发现重复，不要预设答案
+#### 第 3 步：让 Claude 自己发现重复，不要预设答案（CRISPE 框架）
 
 ```
-我：拆完干净多了。现在扫一遍剩下的代码，找出 3-5 处最值得抽公共的重复。
-对每处给出：
-- 重复出现的次数
-- 抽取后能省多少行
-- 抽取方式（utility 函数 / decorator / 基类）
+# Context（上下文）
+拆完干净多了。现在扫一遍剩下的代码，找出重复模式。
+
+# Role（角色）
+你是一位代码重构专家，擅长识别和抽取重复代码。
+
+# Instructions（指令）
+找出 3-5 处最值得抽公共的重复。
+
+# Steps（步骤）
+1. 扫描剩余代码，识别重复模式
+2. 对每处重复给出：重复次数、能省多少行、抽取方式
+3. 按投入产出比排序
+4. 给出抽取后的代码示例
+
+# Preferences（偏好）
+- 优先选择出现次数多的重复
+- 优先选择能节省大量代码的重复
+- 抽取方式要简单实用
+
+# Example（示例）
+常见抽取方式：utility 函数、decorator、基类、工具对象
 ```
 
 Claude 找出三处重复：
@@ -435,11 +818,25 @@ export const Validator = {
 };
 ```
 
-#### 第 4 步：替换 any，发现历史 bug
+#### 第 4 步：替换 any，发现历史 bug（BROKE 框架）
 
 ```
-我：把 any 全部换成实际类型。如果发现某处类型对不上是历史 bug（比如调用方传的字段实际是 string，
-但被当 number 用），先标 TODO 再继续，最后给我一份 bug 清单。
+# Background（背景）
+把 any 全部换成实际类型。如果发现某处类型对不上是历史 bug，需要单独处理。
+
+# Role（角色）
+你是一位 TypeScript 类型专家，擅长类型安全和历史 bug 识别。
+
+# Objective（目标）
+把 any 全部换成实际类型，同时识别历史 bug。
+
+# Key Information（关键信息）
+- 调用方传的字段实际是 string，但被当 number 用
+- metadata 字段在数据库里是 JSONB，老代码当成字符串拼接
+- 日期字段在三处被当 timestamp（number），实际是 ISO string
+
+# Example（示例）
+类似的历史 bug：user.role 在两处被当成布尔值（`if (user.role)` 永远为真，因为是字符串）
 ```
 
 这一步意外捞出 5 个潜伏 bug：
@@ -449,13 +846,36 @@ export const Validator = {
 
 让 Claude 单独开一组 commit 修这些历史 bug，和重构本身分开提交。
 
-#### 第 5 步：补测试
+#### 第 5 步：补测试（ROBOTIC 框架）
 
 ```
-我：给 AuthService 加测试。覆盖这几条路径：
-- login 成功 / 用户不存在 / 密码错误 / token 过期
+# Role（角色）
+你是一位测试工程师，擅长编写单元测试和集成测试。
+
+# Objective（目标）
+给 AuthService 加测试，覆盖主要路径。
+
+# Background（背景）
+重构完成后需要补充测试，确保功能正确性。
+
+# Output format（输出格式）
+1. 完整的测试文件代码
+2. 测试用例说明
+3. testcontainers 配置（如果需要）
+4. 测试覆盖率说明
+
+# Tone（语气）
+精确、可执行、覆盖全面
+
+# Instructions（指令）
+- 覆盖这几条路径：login 成功 / 用户不存在 / 密码错误 / token 过期
 - register 成功 / 邮箱已存在 / 弱密码
 - 不要 mock 整个 db，用 testcontainers 起真实 Postgres
+
+# Constraints（约束）
+- 测试必须可独立运行
+- 不能依赖外部服务
+- 测试用例要覆盖边界情况
 ```
 
 ```typescript
@@ -468,13 +888,31 @@ describe('AuthService', () => {
 });
 ```
 
-#### 第 6 步：复盘
+#### 第 6 步：复盘（CRISPE 框架）
 
 ```
-我：把这次重构总结一下，输出：
-- 改动前 / 改动后对比表（文件数、行数、测试覆盖、类型覆盖）
-- 顺手修了多少历史 bug
-- 哪些环节如果重来会做得不一样
+# Context（上下文）
+重构完成了，需要总结这次重构的经验和教训。
+
+# Role（角色）
+你是一位技术复盘专家，擅长总结项目经验和改进建议。
+
+# Instructions（指令）
+把这次重构总结一下，输出关键指标和改进建议。
+
+# Steps（步骤）
+1. 输出改动前/改动后对比表（文件数、行数、测试覆盖、类型覆盖）
+2. 统计顺手修了多少历史 bug
+3. 分析哪些环节如果重来会做得不一样
+4. 给出未来重构的建议
+
+# Preferences（偏好）
+- 数据要具体可量化
+- 改进建议要可执行
+- 关注投入产出比
+
+# Example（示例）
+类似重构的常见改进点：第一步应该先生成依赖图，能更早发现反向依赖关系
 ```
 
 Claude 总结的数据：单文件 2000 行 → 5 个文件均 < 300 行，重复代码砍掉六成，类型覆盖 0% → 95%，测试覆盖 0% → 80%，顺手修了 5 个历史 bug。
@@ -529,21 +967,32 @@ flowchart TD
 
 PRD 拿到手，先做一遍澄清，再让 Claude 出方案。下面是从产品文档到部署文档的完整对话流。
 
-#### 第 1 步：把 PRD 念给 Claude，先问清楚
+#### 第 1 步：把 PRD 念给 Claude，先问清楚（BROKE 框架）
 
 注意提示词最后那句"告诉我有哪些地方说得不够清楚"——这是 Spec Coding 的灵魂，**让 Claude 主动找模糊点**，比你自己看一遍 PRD 全。
 
 ```
-我：PRD 大致如下：
+# Background（背景）
+PRD 大致如下：
 - 用户提交反馈（文本、截图、日志），分类（Bug / 建议 / 其他），优先级 4 档
 - 管理员处理反馈，状态流转：待处理 → 处理中 → 已解决 → 已关闭
 - 用户能查自己反馈的进度
 
 非功能要求：3 秒响应、离线提交联网自动同步、加密存储、可批量导出。
 
-不要急着给方案。先告诉我：
-1. PRD 里有哪些地方说得不够清楚？
-2. 哪些非功能需求会显著影响技术选型？
+# Role（角色）
+你是一位产品需求分析师，擅长识别需求中的模糊点和冲突。
+
+# Objective（目标）
+不要急着给方案。先分析 PRD 的清晰度和可行性。
+
+# Key Information（关键信息）
+- 需要识别 PRD 里有哪些地方说得不够清楚
+- 需要分析哪些非功能需求会显著影响技术选型
+- 需要指出需求之间的冲突
+
+# Example（示例）
+常见模糊点：匿名提交、附件大小限制、管理员权限、通知渠道、数据保留策略
 ```
 
 Claude 反问了 5 个点：
@@ -555,17 +1004,30 @@ Claude 反问了 5 个点：
 
 并指出"3 秒响应 + 加密存储"是冲突的——同步加密会增加延迟，需要异步加密或硬件加速。
 
-#### 第 2 步：补完答案，要 Claude 复述一遍
+#### 第 2 步：补完答案，要 Claude 复述一遍（CRISPE 框架）
 
 ```
-我：回答：
-1. 必须登录，不接受匿名
-2. 附件：截图 5MB / 日志 10MB，格式 jpg/png/txt/log
-3. 管理员后台配置 user_id，可以改用户提交的内容（加审计日志）
-4. 邮件 + 站内信
-5. 反馈保留 1 年，已关闭的 30 天后删
+# Context（上下文）
+基于之前的澄清，现在补完答案，需要确认理解一致。
 
-把你理解的需求用 3-5 行复述一遍，确认我们对齐了再给方案。
+# Role（角色）
+你是一位需求分析师，擅长需求澄清和确认。
+
+# Instructions（指令）
+回答以下问题，然后把理解的需求复述一遍。
+
+# Steps（步骤）
+1. 确认以下答案：必须登录、附件大小限制、管理员权限、通知渠道、数据保留策略
+2. 用 3-5 行复述一遍需求
+3. 确认理解无误后再给方案
+
+# Preferences（偏好）
+- 复述要简洁但完整
+- 要突出关键约束
+- 要确认非功能需求
+
+# Example（示例）
+复述时要明确"P95 首屏 3 秒"而不是模糊的"3 秒响应"
 ```
 
 Claude 复述时把"加密存储"拆成了"S3 服务端加密 + 应用层敏感字段加密"两层，并把"3 秒响应"明确为"P95 首屏 3 秒"。这两处复述帮我发现 PRD 里隐含的歧义，确认无误后再继续。
@@ -590,13 +1052,36 @@ GET  /api/notifications             通知列表
 
 我又追问了一句"为什么不用 GraphQL"——Claude 的回答是这个场景接口数少（< 10），用 REST 更简单，GraphQL 会引入额外的 schema 维护成本和缓存复杂度。这个判断我认。
 
-#### 第 4 步：建表（要求附迁移和回滚）
+#### 第 4 步：建表（要求附迁移和回滚）（ROBOTIC 框架）
 
 ```
-我：先把 feedbacks 表的迁移写了。要求：
-1. PostgreSQL，UUID 主键
-2. 同时给出 up 和 down 函数，down 必须可执行
-3. 索引说明每个索引的查询场景
+# Role（角色）
+你是一位数据库架构师，擅长 PostgreSQL schema 设计和迁移。
+
+# Objective（目标）
+先把 feedbacks 表的迁移写了。
+
+# Background（背景）
+用户反馈系统需要存储反馈数据，需要设计合理的表结构和索引。
+
+# Output format（输出格式）
+1. 完整的迁移文件代码（TypeScript）
+2. up 函数：创建表和索引
+3. down 函数：删除表（必须可执行）
+4. 每个索引的查询场景说明
+
+# Tone（语气）
+精确、可执行、注释清晰
+
+# Instructions（指令）
+- PostgreSQL，UUID 主键
+- 同时给出 up 和 down 函数，down 必须可执行
+- 索引说明每个索引的查询场景
+
+# Constraints（约束）
+- 必须使用 UUID 主键
+- 必须包含必要的约束（CHECK、FOREIGN KEY）
+- down 函数必须能安全执行
 ```
 
 ```typescript
@@ -630,14 +1115,38 @@ export async function down(pool: Pool) {
 // attachments / notifications 两张表的迁移类似
 ```
 
-#### 第 5 步：API 控制器（要求边界情况覆盖）
+#### 第 5 步：API 控制器（要求边界情况覆盖）（ROBOTIC 框架）
 
 ```
-我：写 createFeedback 接口。
+# Role（角色）
+你是一位后端开发工程师，擅长 API 设计和错误处理。
+
+# Objective（目标）
+写 createFeedback 接口，处理附件上传和边界情况。
+
+# Background（背景）
+用户反馈系统需要支持附件上传，需要处理 S3 上传和数据库写入的一致性问题。
+
+# Output format（输出格式）
+1. 完整的控制器代码
+2. 错误处理逻辑
+3. 边界情况处理
+4. 限流配置
+
+# Tone（语气）
+严谨、可执行、注释清晰
+
+# Instructions（指令）
 - 附件先传 S3，再把元信息写入 feedbacks.attachments
 - 如果 S3 上传成功但数据库写入失败，要异步清理 S3 上的孤儿文件
 - 边界：附件超过大小限制、不支持的格式，提前拒绝
 - 限流：同一用户 1 分钟最多 10 条
+
+# Constraints（约束）
+- 必须处理 S3 上传失败的情况
+- 必须处理数据库写入失败后的清理
+- 必须实现限流
+- 必须验证附件大小和格式
 ```
 
 ```typescript
@@ -674,7 +1183,7 @@ async createFeedback(req: Request, res: Response) {
 }
 ```
 
-#### 第 6 步：前端（离线优先）
+#### 第 6 步：前端（离线优先）（ROBOTIC 框架）
 
 #### 反馈系统数据流
 
@@ -704,11 +1213,34 @@ flowchart TD
 ```
 
 ```
-我：写一个离线优先的 hook，让组件不用关心在线状态。
-关键约束：
+# Role（角色）
+你是一位前端工程师，擅长 React 和离线优先架构。
+
+# Objective（目标）
+写一个离线优先的 hook，让组件不用关心在线状态。
+
+# Background（背景）
+用户反馈系统需要支持离线提交，联网后自动同步。
+
+# Output format（输出格式）
+1. useFeedback hook 完整代码
+2. FeedbackForm 组件代码
+3. 同步逻辑代码
+4. IndexedDB 配置
+
+# Tone（语气）
+简洁、可执行、注释清晰
+
+# Instructions（指令）
 - 离线时立即返回成功（UI 显示"已暂存"）
 - 联网后自动批量同步，按 createdAt 倒序排
 - 同步失败重试 3 次（指数退避），3 次都失败标记 failed 但保留
+
+# Constraints（约束）
+- 必须使用 IndexedDB 暂存
+- 必须监听网络恢复事件
+- 必须实现指数退避重试
+- 必须标记失败的同步项
 ```
 
 ```tsx
@@ -780,11 +1312,31 @@ const syncFeedbacks = async (items: PendingItem[]) => {
 };
 ```
 
-#### 第 7 步：测试（让 Claude 主动找边界）
+#### 第 7 步：测试（让 Claude 主动找边界）（CRISPE 框架）
 
 ```
-我：给反馈接口加测试。除了正常路径，我希望你主动想 5 个最容易出问题的边界，
-列出来后我们逐个写。不要只测 happy path。
+# Context（上下文）
+需要给反馈接口加测试，确保覆盖各种边界情况。
+
+# Role（角色）
+你是一位测试工程师，擅长识别边界情况和编写测试用例。
+
+# Instructions（指令）
+给反馈接口加测试。除了正常路径，主动想 5 个最容易出问题的边界。
+
+# Steps（步骤）
+1. 列出 5 个最容易出问题的边界
+2. 逐个编写测试用例
+3. 不要只测 happy path
+4. 确保测试覆盖率和可维护性
+
+# Preferences（偏好）
+- 优先测试高风险场景
+- 测试用例要独立可运行
+- 测试描述要清晰
+
+# Example（示例）
+常见边界：未登录访问、附件超限、高频提交、孤儿文件清理、非法状态流转
 ```
 
 Claude 列出的 5 个边界：
@@ -819,12 +1371,40 @@ describe('FeedbackController', () => {
 });
 ```
 
-#### 第 8 步：让 Claude 生成部署文档
+#### 第 8 步：让 Claude 生成部署文档（ROBOTIC 框架）
 
 ```
-我：照着 README 风格写一份部署文档。
-要求：从一台空白 Ubuntu 22.04 机器开始，照着抄就能上线。
-覆盖：依赖安装、环境变量、迁移、Nginx 配置、SSL、定时任务、回滚步骤。
+# Role（角色）
+你是一位 DevOps 工程师，擅长部署文档编写和运维。
+
+# Objective（目标）
+照着 README 风格写一份部署文档。
+
+# Background（背景）
+用户反馈系统需要部署到生产环境，需要完整的部署文档。
+
+# Output format（输出格式）
+1. 环境要求
+2. 依赖安装步骤
+3. 环境变量配置
+4. 数据库迁移步骤
+5. Nginx 配置
+6. SSL 配置
+7. 定时任务配置
+8. 回滚步骤
+
+# Tone（语气）
+清晰、可执行、步骤详细
+
+# Instructions（指令）
+- 从一台空白 Ubuntu 22.04 机器开始，照着抄就能上线
+- 覆盖：依赖安装、环境变量、迁移、Nginx 配置、SSL、定时任务、回滚步骤
+
+# Constraints（约束）
+- 每个步骤必须可独立执行
+- 必须包含错误处理
+- 必须提供回滚方案
+- 必须使用 systemd 或 pm2 管理进程
 ```
 
 输出的要点（节选）：
@@ -879,7 +1459,7 @@ mindmap
 ### find-skills：找合适的 Skill
 
 ```
-我：我在做 React 项目，有什么能直接用的 Skill？
+我在做 React 项目，有什么能直接用的 Skill？
 ```
 
 Claude 列了几个候选：`vercel-react-best-practices`（Vercel 官方的 React 最佳实践）、`frontend-design`、`web-design-guidelines`。安装命令：
@@ -909,7 +1489,7 @@ claude "用 vercel-react-best-practices 帮我审查这个组件"
 ### audit-website：网站审计
 
 ```
-我：网站上线了，跑一遍全面审计。
+网站上线了，跑一遍全面审计。
 ```
 
 Claude 给的报告通常包含四个维度的分数（性能 / SEO / 可访问性 / 安全）和优先级排序的修复清单。比如性能这块常见问题是图片没上 WebP、CSS 没压缩、字体没 preload，按 LCP 影响排序。
@@ -917,7 +1497,7 @@ Claude 给的报告通常包含四个维度的分数（性能 / SEO / 可访问�
 ### brainstorming：起名 / 想点子
 
 ```
-我：做一个 AI 写作助手，帮我想几个名字。
+做一个 AI 写作助手，帮我想几个名字。
 ```
 
 Claude 会按风格分类输出（科技感 / 文艺 / 现代 / 简洁），点哪类继续往下挖就行。这个 Skill 的核心价值是给"风格维度"，避免名字都长一个样。
@@ -997,7 +1577,7 @@ export async function scrapeProducts(url: string) {
 ### webapp-testing：E2E 测试
 
 ```
-我：电商网站的结账流程要写 E2E。
+电商网站的结账流程要写 E2E。
 ```
 
 ```typescript
@@ -1022,7 +1602,7 @@ test('购物车结账完整流程', async ({ page }) => {
 ### code-review：代码审查
 
 ```
-我：刚写完认证模块，帮我审一遍。
+刚写完认证模块，帮我审一遍。
 ```
 
 通常会按 安全 / 质量 / 性能 三类列问题。最常见的几条：密码没加盐、JWT secret 硬编码、没有限流、函数过长、缺输入校验。修复模板：
@@ -1127,7 +1707,7 @@ sequenceDiagram
 #### 第 1 步：协调 session 出 API 规范
 
 ```
-我（在 coordinator session 里）：
+在 coordinator session 里：
 我们三天做一个博客系统，团队有前端、后端、测试三个 agent 并行。
 你作为协调，先出一份 REST API 规范。要求：
 1. 字段命名统一 camelCase
@@ -1244,7 +1824,7 @@ flowchart TD
 #### 第 1 步：把现状报给 Claude，让它先排优先级
 
 ```
-我：Node 18 + Express 4 + MongoDB + Redis。
+Node 18 + Express 4 + MongoDB + Redis。
 现象：内存每天 +500MB，GC 后不释放，3 天 OOM。
 线索：3 天前刚加了 WebSocket 实时通知功能。
 日志：没有明显异常。
@@ -1267,7 +1847,7 @@ Claude 排序的嫌疑（按可能性从高到低）：
 #### 第 2 步：加监控，量化问题
 
 ```
-我：要先量化问题。
+要先量化问题。
 给我一份监控代码，每分钟输出：
 - RSS / heapUsed / external 内存
 - 活跃 handle 数 / 活跃 request 数
@@ -1302,7 +1882,7 @@ heapdump.writeSnapshot(`/tmp/heap-${Date.now()}.heapsnapshot`);
 #### 第 3 步：抓堆快照，做差异对比
 
 ```
-我：抓了两个快照间隔 4 小时，rss 涨了 200MB。
+抓了两个快照间隔 4 小时，rss 涨了 200MB。
 现在看哪些对象增长最多。
 重点关注：Socket 类、EventListener 数组、闭包持有的 user data。
 ```
@@ -1358,7 +1938,7 @@ setInterval(() => {
 部署后内存增长从 +500MB/day 降到 +50MB/day。还在涨，但慢得多——继续往下挖。
 
 ```
-我：还剩 +50MB/day。原嫌疑列表里 MongoDB 连接池没排除，
+还剩 +50MB/day。原嫌疑列表里 MongoDB 连接池没排除，
 帮我看看 mongoose 这块的连接池配置有没有问题。
 当前配置就一行：mongoose.connect(uri)。
 ```
@@ -1380,7 +1960,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 #### 第 5 步：补告警，防止再发生
 
 ```
-我：现在修好了，怎么避免下次再出？给我一套监控告警配置。
+现在修好了，怎么避免下次再出？给我一套监控告警配置。
 要求：
 - 不要只看 RSS，那个会被云厂商误判
 - 看 trend：RSS 6 小时内增长 > 100MB 就告警
@@ -2004,7 +2584,7 @@ claude "写跨模块的 E2E 测试"
 
 ## 小结
 
-用好 Claude Code 没什么秘诀，就四件事：
+用好 Claude Code 其实很简单，就四件事：
 
 - **写清楚需求**——目标、上下文、约束，至少占两样
 - **拆小步走**——复杂任务每步只问一件事

@@ -184,8 +184,6 @@ flowchart TB
 - **[战略设计总览](./strategic-design/)** - 领域 / 子域 / 限界上下文 / 上下文映射的上帝视角
 - [领域划分](./domain-partitioning/) - 如何划分领域（含"领域"的定义）
 - [核心域、支撑域、通用域](./domain-types/) - 领域重要性分类
-- [聚合根设计](./aggregate-root-design/) - 聚合的设计原则
-- [领域事件](./domain-events/) - 领域内的事件机制
 
 ### 战术设计
 
@@ -193,10 +191,12 @@ flowchart TB
 - [实体 (Entity)](./entity/) - 具有唯一标识的对象（含四种血液模型）
 - [值对象 (Value Object)](./value-object/) - 没有标识的不可变对象（含单一/多属性两种形态）
 - [聚合 (Aggregate)](./aggregate/) - 数据修改的单元
+- [聚合根设计](./aggregate-root-design/) - 聚合的入口与设计原则
 - [工厂 (Factory)](./factory/) - 封装聚合创建逻辑
 - [领域服务 (Domain Service)](./domain-service/) - 领域逻辑服务
 - [应用服务 (Application Service)](./application-service/) - 应用层服务
-- [仓储 (Repository)](./repository/) - 聚合的持久化抽象（含 Mapper + DO 转换）
+- [仓储 (Repository)](./repository/) - 聚合的持久化抽象(含 Mapper + DO 转换)
+- [领域事件](./domain-events/) - 聚合间解耦通信的过去时事实
 
 ### 建模方法
 
@@ -256,23 +256,13 @@ flowchart TB
 > **DDD 不是银弹**。对于不复杂的项目，MVC 更简单高效。深刻理解业务、洞察问题本质，才是架构师最核心的能力体现。
 
 ## 参考链接
-
 - [Domain-Driven Design 官方网站](https://domainlanguage.com/ddd/)
-- Eric Evans《Domain-Driven Design Reference》 —— 蓝皮书概念的官方速查（PDF 免费）
-  https://www.domainlanguage.com/ddd/reference/
-- Martin Fowler《Bounded Context》 —— 限界上下文最权威的短文
-  https://martinfowler.com/bliki/BoundedContext.html
-- Martin Fowler《AnemicDomainModel》 —— 贫血模型反模式定义
-  https://martinfowler.com/bliki/AnemicDomainModel.html
-
-- Alistair Cockburn《Hexagonal Architecture》 —— 六边形架构原文
-  https://alistair.cockburn.us/hexagonal-architecture/
-- Jeffrey Palermo《The Onion Architecture》系列 —— 洋葱架构原始系列文章
-  https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/
-- Robert C. Martin《The Clean Architecture》 —— 整洁架构权威阐述
-  https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
-- Herberto Graça《DDD, Hexagonal, Onion, Clean, CQRS, … How I put it all together》 —— Explicit Architecture 综合视图原文
-  https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/
-
-[一文读懂：领域驱动设计DDD](https://www.zhihu.com/tardis/zm/art/641295531)
-[AI编程：DDD开源SKILLS](https://github.com/microwind/ai-skills/tree/main/domain-driven-design)
+- [Eric Evans《Domain-Driven Design Reference》 —— 蓝皮书概念的官方速查（PDF 免费）](https://www.domainlanguage.com/ddd/reference/)
+- [Martin Fowler《Bounded Context》 —— 限界上下文最权威的短文](https://martinfowler.com/bliki/BoundedContext.html)
+- [Martin Fowler《AnemicDomainModel》 —— 贫血模型反模式定义](https://martinfowler.com/bliki/AnemicDomainModel.html)
+- [Alistair Cockburn《Hexagonal Architecture》 —— 六边形架构原文](https://alistair.cockburn.us/hexagonal-architecture/)
+- [Jeffrey Palermo《The Onion Architecture》系列 —— 洋葱架构原始系列文章](https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/)
+- [Robert C. Martin《The Clean Architecture》 —— 整洁架构权威阐述](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Herberto Graça《DDD, Hexagonal, Onion, Clean, CQRS, … How I put it all together》 —— Explicit Architecture 综合视图原文](https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/)
+- [一文读懂：领域驱动设计DDD](https://www.zhihu.com/tardis/zm/art/641295531)
+- [AI编程：DDD开源SKILLS](https://github.com/microwind/ai-skills/tree/main/domain-driven-design)

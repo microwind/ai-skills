@@ -1,6 +1,6 @@
 ---
 name: 领域划分
-description: "将复杂的业务领域分解为子域，识别核心域、支撑域和通用域，合理分配资源。"
+description: "领域拆分的方法论：如何识别业务能力边界、按职责把复杂领域切分成可治理的子域，是 DDD 战略设计的第一步（子域类型分类详见 domain-types）。"
 ---
 
 # 领域划分 (Domain Partitioning)
