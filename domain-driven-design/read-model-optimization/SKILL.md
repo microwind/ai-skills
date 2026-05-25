@@ -1,7 +1,6 @@
 ---
 name: 读模型优化
 description: "为查询场景专门设计的数据模型，通过反规范化、物化视图等技术优化读取性能。"
-license: MIT
 ---
 
 # 读模型优化 (Read Model Optimization)

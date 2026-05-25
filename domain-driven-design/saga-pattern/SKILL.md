@@ -1,7 +1,6 @@
 ---
 name: Saga模式
 description: "管理跨多个服务的分布式事务，通过编排或协调事件序列确保数据最终一致性。"
-license: MIT
 ---
 
 # Saga 模式 (Saga Pattern)

@@ -1,7 +1,6 @@
 ---
 name: RabbitAdvisors 知识付费案例研究
 description: "以虚拟公司 RabbitTech 的知识付费产品 RabbitAdvisors 为例，完整演示从领域建模到微服务落地的全流程 DDD 实践。"
-license: MIT
 ---
 
 # RabbitAdvisors 知识付费案例研究

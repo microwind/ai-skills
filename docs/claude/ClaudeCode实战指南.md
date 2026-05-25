@@ -1,129 +1,266 @@
 # Claude Code 实战指南
 
-> 真实场景，真实对话，真实开发流程
+> 这些都是日常工作里真的遇到过的场景。提示词、步骤、踩过的坑都放在这里，方便备查。
 
-## 目录
-
-- [完整项目实战](#完整项目实战)
-  - [场景1：电商系统从0到1](#场景1电商系统从0到1)
-  - [场景2：SaaS平台迭代开发](#场景2saas平台迭代开发)
-  - [场景3：移动App跨平台开发](#场景3移动app跨平台开发)
-- [Vibe Coding实战](#vibe-coding实战)
-- [Spec Coding指南](#spec-coding指南)
-- [Skills应用场景](#skills应用场景)
-- [团队协作模式](#团队协作模式)
-- [高级调试技巧](#高级调试技巧)
-- [实战场景库](#实战场景库)
-- [高效工作流](#高效工作流)
-- [实用技巧](#实用技巧)
-
----
 
 ## 完整项目实战
 
-### 场景1：电商系统从0到1
+### 场景 1：电商系统从 0 到 1
 
-**背景**：2周内上线电商MVP（商品、购物车、订单、支付），1个全栈工程师用Claude Code加速。
+一个人 2 周内上线电商 MVP，要覆盖商品、购物车、订单、支付四个核心模块。技术栈完全没定，先让 Claude 给个能落地的方案。
 
-**关键提示词**：
+#### 第 1 轮：选型
+
 ```
-我要做一个电商MVP，时间很紧，只有2周。核心功能：商品列表、购物车、订单、支付。技术栈我还没定，你给个建议，要快，要稳，要能快速迭代。
+我：要做一个电商 MVP，时间只有 2 周，1 个全栈在写。
+核心功能：商品列表、购物车、订单、支付。技术栈还没定。
+给一套能快速搭起来、后面也好迭代的方案，列出选型理由。
 ```
 
-**Claude响应**：推荐Next.js 14 + TypeScript + shadcn/ui（前端），Node.js + Express + MongoDB（后端），Stripe（支付），Vercel + Railway（部署）
+Claude 给的方案（节选）：前端 Next.js 14 + shadcn/ui，后端 Node + Express + MongoDB，支付走 Stripe，部署 Vercel + Railway。理由是这套栈生态成熟、部署最省事，2 周内能跑通。
+
+#### 第 2 轮：质疑选型，看是否撑得住后续扩展
+
+```
+我：MongoDB 这块我有点犹豫。订单和库存对一致性要求高，
+PostgreSQL 是不是更稳？另外 Stripe 在国内能用吗，要不要预留替换空间?
+```
+
+Claude 同意 PostgreSQL 更合适：订单/库存涉及事务和外键约束，Mongo 处理起来要绕。Stripe 国内不能直接收人民币，建议把支付层抽象成 `PaymentProvider` 接口，先实现 `StripeProvider`，上线时按需替换 `WechatPayProvider`、`AlipayProvider`。
+
+确定调整后的栈：Next.js 14 + PostgreSQL + Prisma + Stripe（适配器模式）+ Vercel/Railway。
 
 **系统架构图**：
 ```mermaid
 graph TB
-    subgraph "前端层"
-        A[Next.js 14 + TypeScript]
-        B[Tailwind CSS + shadcn/ui]
+    subgraph Frontend ["前端层"]
+        A[Next.js 14 + TS]
+        B[Tailwind + shadcn/ui]
     end
-    subgraph "后端层"
+    subgraph Backend ["后端层"]
         C[Node.js + Express]
-        D[MongoDB]
+        D[(MongoDB)]
     end
-    subgraph "第三方服务"
-        E[Stripe支付]
-        F[Vercel部署]
+    subgraph ThirdParty ["第三方服务"]
+        E[Stripe 支付]
+        F[Vercel / Railway]
     end
     A --> C
     C --> D
     C --> E
     A --> F
+
+    classDef fe fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef be fill:#f1f8e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef tp fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    class A,B fe;
+    class C,D be;
+    class E,F tp;
 ```
 
-**关键步骤**：
-- Day 1：技术选型 + 项目初始化
-- Day 2-3：商品列表 + 购物车 + 订单
-- Day 4：支付集成（Stripe）
-- Day 7：测试优化（自动扫描代码发现问题）
-- Day 14：部署上线
+#### 第 3 轮：让 Claude 生成项目骨架
 
-**技巧**：描述需求时明确时间约束和核心功能，Claude会给出最优技术栈和实施计划。
+```
+我：按上面的栈生成项目骨架。要求：
+- monorepo 结构（pnpm workspace）
+- apps/web（Next.js）、packages/db（Prisma schema）、packages/payment（适配器）
+- 预置 ESLint + Prettier + Husky
+- 写一个 CLAUDE.md 把这些约定固化
+```
+
+Claude 输出了目录、`pnpm-workspace.yaml`、初始 Prisma schema（User / Product / Cart / Order 四个模型）和一份精简的 `CLAUDE.md`。我在它生成的 CLAUDE.md 里又补了"金额单位统一用 cents（避免浮点）"和"所有 API 路由必须经 zod 校验"两条。
+
+#### 第 4 轮：高风险模块单独开 session
+
+下单和支付链路是最容易出问题的地方，单独开 session 慢慢推：
+
+```
+我：实现下单接口。要求：
+1. 事务里做库存扣减 + 订单写入 + 创建 Stripe PaymentIntent
+2. 任一步失败整个事务回滚
+3. Stripe 异步 webhook 回来后才把订单状态置为 PAID
+4. 幂等：同一个 cart_id 重复下单返回同一个 order_id
+```
+
+Claude 给的实现里漏了一个细节——`PaymentIntent` 创建调用是网络请求，放在数据库事务里会拉长事务持续时间。我追问后改成两阶段：先在事务里建订单（状态 `PENDING_PAYMENT`），事务提交后再创建 `PaymentIntent`，更新订单的 `payment_intent_id` 字段。
+
+#### 第 5 轮：上线前自查
+
+```
+我：用 code-review Skill 扫一遍下单和支付相关代码，
+重点看：并发竞态、金额计算、敏感信息日志、Stripe webhook 验签。
+```
+
+Claude 报出 4 个问题：库存扣减没用 `SELECT FOR UPDATE`（并发下卖超）、运费计算用了 float（要换 decimal）、错误日志里把信用卡 fingerprint 打了出来、webhook 没校验 `stripe-signature` header。修完后才上线。
+
+**两周排期**：
+- Day 1：选型确认 + 初始化 + CI 跑通
+- Day 2–3：商品列表、购物车、订单核心流程
+- Day 4：Stripe 支付链路（两阶段提交 + webhook）
+- Day 5–6：管理后台 + 数据看板
+- Day 7：全量回归 + code-review 扫一遍
+- Day 8–13：UI 打磨 + 修小问题
+- Day 14：上线
+
+**几个经验**：
+- 时间约束摆最前面，Claude 才会给你"两周能上线"而不是"理论上最好"的方案
+- 第一轮方案不用照单全收，质疑两三个选型点能换来更稳的栈
+- 高风险模块（支付、下单、权限）单独开 session，给出明确的并发/幂等/审计要求
 
 ---
 
-### 场景2：SaaS平台迭代开发
+### 场景 2：SaaS 平台迭代开发
 
-**背景**：已上线SaaS平台添加团队协作模块，3天内完成核心功能（团队管理、项目管理、实时评论）。
+已有 SaaS 平台，要在 3 天内加一个团队协作模块。重点是不能破坏现有数据隔离。
 
-**关键提示词**：
+#### 第 1 轮：先问风险，不直接要方案
+
 ```
-产品经理给了需求文档，核心点：团队创建管理、项目管理、实时协作（评论@提醒）、数据权限。技术约束：兼容现有系统（React 18 + Node.js）、支持100+并发、数据安全要求高。你觉得这个需求怎么样？有没有风险点？
+我：现有 SaaS（React 18 + Node.js）要加团队协作模块：
+- 团队创建/管理、项目管理
+- 实时评论 @ 提醒
+- 数据严格按租户隔离，100+ 并发
+
+先告诉我有什么风险点，怎么破坏现有架构最容易，再给方案。
 ```
 
-**Claude响应**：推荐Supabase Realtime（托管服务省运维）、RBAC权限系统、数据库租户隔离（team_id）、Redis缓存提升性能
+Claude 列出的风险：
+1. 实时通信选型容易跑偏，自己搭 WebSocket 维护成本高
+2. 权限要在数据库层做行级隔离，光在中间件判断不够，绕过中间件就漏
+3. @ 提醒的邮件/站内信发送如果同步写在评论接口里，会让评论 P95 变长
+4. 现有 user 表如果没有 `team_id` 概念，加协作会引入循环依赖
 
-**数据库ER图**：
+#### 第 2 轮：让 Claude 给方案，并指出哪些是"成熟方案"
+
+```
+我：针对这 4 个风险，给一套现成轮子能解决的方案。
+不要从零造，能用托管服务就用。
+```
+
+Claude 的方案：
+- 实时通信用 Supabase Realtime（托管 + Postgres CDC）
+- 权限用 PostgreSQL RLS（Row Level Security），策略写在数据库层
+- @ 提醒发送走消息队列异步化（用现有 BullMQ）
+- 加一张 `team_memberships` 关联表，user 表不动
+
+#### 第 3 轮：评审 Schema
+
+```
+我：把 schema 详细写出来，特别是 RLS 策略。
+我要看一下"用户只能看到自己所在 team 的项目"这条策略具体怎么写。
+```
+
+```sql
+-- projects 表的 RLS 策略
+CREATE POLICY tenant_isolation ON projects
+  FOR ALL
+  USING (
+    team_id IN (
+      SELECT team_id FROM team_memberships
+      WHERE user_id = current_setting('app.current_user_id')::uuid
+    )
+  );
+
+-- 应用层在每次请求开始时 SET LOCAL app.current_user_id
+```
+
+我追问了一个边界情况：**管理员需要跨租户查询时怎么办？** Claude 给的答案是加一个 `bypass_rls` 角色，管理员请求时切换 role。
+
+**数据库模型**：
 ```mermaid
 erDiagram
-    users ||--o{ team_members : "belongs to"
-    teams ||--o{ team_members : "has"
-    teams ||--o{ projects : "owns"
-    projects ||--o{ comments : "has"
-    users ||--o{ comments : "writes"
+    USERS ||--o{ TEAM_MEMBERS : "属于"
+    TEAMS ||--o{ TEAM_MEMBERS : "包含"
+    TEAMS ||--o{ PROJECTS : "管理"
+    PROJECTS ||--o{ COMMENTS : "拥有"
+    USERS ||--o{ COMMENTS : "发表"
+
+    USERS {
+        uuid id PK
+        string email
+        string role
+    }
+    TEAMS {
+        uuid id PK
+        string name
+    }
 ```
 
-**关键步骤**：
-- Day 1：数据库schema + RBAC权限系统 + Supabase Realtime集成
-- Day 2：团队CRUD API + 权限校验中间件 + 前端页面
-- Day 3：实时评论 + @提醒 + 测试（发现删除同步问题并修复）
+#### 第 4 轮：实时评论上线后才发现的坑
 
-**技巧**：迭代开发时先识别风险点（实时协作技术选型、权限系统设计），Claude会给出最优方案和实施计划。
+实现过程中触发了一个原本没预期的问题：
+
+```
+我：评论实现完了，但本地测试时发现删除评论后，其他用户的页面没有自动消失。
+后端 DELETE 接口确实执行了，Supabase Realtime 也推了 DELETE 事件。
+帮我看下前端订阅代码哪里有问题。
+```
+
+Claude 看完后定位到：前端只订阅了 `INSERT` 和 `UPDATE`，漏了 `DELETE`。Supabase Realtime 的 `*` 通配在某些 SDK 版本里不生效，要显式列出三个事件。修完一行代码搞定。
+
+**三天排期**：
+- Day 1：Schema + RLS 策略 + Supabase Realtime 接入
+- Day 2：团队/项目 CRUD + 权限中间件 + 前端列表页
+- Day 3：实时评论 + @ 提醒（异步队列）+ 修删除同步 bug
+
+让 Claude 先做风险评估，再让它给"用成熟轮子"的方案，能少踩很多坑。最容易出问题的地方往往不是大模块，是评审 schema 时漏掉的边界情况——多问一句"如果是 X 怎么办"。
 
 ---
 
-### 场景3：移动App跨平台开发
+### 场景 3：移动 App 跨平台开发
 
-**背景**：电商公司开发iOS/Android双平台App，预算有限时间紧，用React Native + Expo快速开发。
+电商 App 要 iOS、Android 都上，预算和时间都紧。
 
-**关键提示词**：
+#### 第 1 轮：方案对比
+
 ```
-我们要开发电商App，iOS和Android都要。预算有限，时间紧。你给个技术方案。
+我：电商 App，iOS 和 Android 都要，预算有限，时间紧。
+列三个候选方案对比：React Native、Flutter、各写一套原生。
+告诉我哪个最合适，理由是什么。
 ```
 
-**Claude响应**：推荐React Native + Expo（一套代码双平台节省50%时间）、Expo SDK 50 + TypeScript + React Navigation + React Query、Expo提供现成组件（相机/推送/支付）支持热更新
+Claude 的对比结论：React Native 最合适。理由是团队已有 React 经验（学习成本最低）、Expo 把支付/推送/相机封装好了、热更新能避免每次小改都走 App Store 审核。Flutter 性能更好但要学 Dart，原生方案双倍工作量，都不适合当前情况。
 
-**移动App架构图**：
+#### 第 2 轮：Expo Managed 还是 Bare Workflow
+
+```
+我：用 Expo 的话，Managed 工作流就够吗？
+我之前听说要接某些原生 SDK（比如统计、支付）的话，Managed 会受限。
+```
+
+Claude 解释：Expo SDK 50 之后大部分常见原生模块都有官方支持（Stripe、Notifications、Camera 都覆盖了），Managed 够用。只有需要自己写原生模块或接非常小众的 SDK 时才需要 Bare。结论是先 Managed，遇到不行再 prebuild 切到 Bare（这条路是单向的，但 prebuild 工具能自动处理）。
+
+#### 第 3 轮：项目骨架 + 离线策略
+
+```
+我：生成项目骨架。要求：
+- TypeScript + Expo Router（不要 React Navigation 老式写法）
+- 状态管理用 React Query
+- 商品列表要支持离线浏览（缓存 100 件最近浏览过的商品）
+- 用 AsyncStorage 持久化 Query Cache
+```
+
+Claude 生成的骨架里漏了一个细节——`AsyncStorage` 存大对象有性能问题（每次都是全量序列化）。我追问后改用 `MMKV`（同步、快 10 倍），并按 query key 分片存储。
+
+**架构**：
 ```mermaid
 graph TB
-    subgraph "UI层"
+    subgraph UI ["UI 层"]
         A[React Native]
         B[Expo SDK]
         C[React Navigation]
     end
-    subgraph "状态管理"
+    subgraph State ["状态管理"]
         D[React Query]
         E[AsyncStorage]
     end
-    subgraph "业务逻辑"
+    subgraph Logic ["业务"]
         F[API Services]
         G[Offline Sync]
     end
-    subgraph "原生功能"
-        H[Stripe支付]
-        I[相机/相册]
+    subgraph Native ["原生功能"]
+        H[Stripe]
+        I[相机 / 推送]
     end
     A --> C
     A --> D
@@ -133,1279 +270,600 @@ graph TB
     F --> H
     A --> I
     B --> A
+
+    classDef ui fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+    classDef st fill:#e0f7fa,stroke:#00838f,stroke-width:2px,color:#006064;
+    classDef lg fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef na fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c;
+    class A,B,C ui;
+    class D,E st;
+    class F,G lg;
+    class H,I na;
 ```
 
-**关键步骤**：
-- Day 1：项目初始化 + 导航配置（Stack + Bottom Tab）
-- Day 2：首页商品列表（FlatList + React Query）
-- Day 3：Stripe支付集成 + 离线同步（AsyncStorage）
+#### 第 4 轮：上架前再让 Claude 过一遍审核风险
 
-**技巧**：跨平台开发时明确双平台需求和时间预算，Claude会推荐合适的跨平台框架和开发策略。
+```
+我：准备提交 App Store / Google Play。帮我列一下两个平台最常拒审的点，
+对照我们的代码看看有没有命中。重点关注：
+- 隐私政策、权限申请
+- IAP（我们没用，是不是要解释清楚）
+- 后台任务、推送内容
+```
+
+Claude 列了 6 个常见拒审点（隐私政策跳转、相机权限的 NSCameraUsageDescription 文案、未使用 IAP 但有付费功能需声明走外部支付、推送权限请求时机过早、深色模式适配、儿童隐私 COPPA），其中 3 个命中了。逐个改完后两次审核都过了。
+
+**节奏**：
+- Day 1：初始化 + Expo Router + MMKV 持久化
+- Day 2：首页商品列表（FlatList + React Query 分页 + 离线缓存）
+- Day 3：Stripe 支付 + 离线同步队列
+- Day 4：补审核合规点 + 截图 + 提交
+
+提示词里把"双端 + 预算紧"摆出来，Claude 才会主动倾向跨平台方案。选型时让它做对比，比直接要"最优方案"更可信——你能看到它的推理过程。
 
 ---
 
-## Vibe Coding实战
+## Vibe Coding 实战
 
-Vibe Coding是一种边聊边写的开发方式，像结对编程一样自然流畅。
+Vibe Coding 不太正式，就是"边聊边写"。一边描述问题一边让 Claude 改代码，像和搭档结对编程。
 
-#### Vibe Coding工作流程
+#### Vibe Coding 工作流程
 
 ```mermaid
 sequenceDiagram
-    participant 我 as 开发者
+    autonumber
+    participant Dev as 开发者
     participant Claude as Claude Code
-    participant Code as 代码库
+    participant Repo as 代码库
 
-    我->>Claude: 描述问题/需求
-    Claude->>Claude: 分析代码
-    Claude->>我: 提出问题和建议
-    我->>Claude: 确认方向
-    Claude->>Code: 生成/修改代码
-    Code-->>Claude: 代码状态
-    Claude->>我: 展示结果
-    我->>Claude: 反馈和调整
-    Claude->>Code: 迭代优化
-    loop 持续对话
-        我->>Claude: 新的想法/问题
-        Claude->>我: 实时响应
+    Dev->>Claude: 描述问题
+    Claude->>Repo: 读上下文
+    Claude-->>Dev: 提建议 / 反问
+    Dev->>Claude: 给方向
+    Claude->>Repo: 写代码
+    Repo-->>Claude: 编译/测试反馈
+    Claude->>Dev: 展示结果
+    loop 持续迭代
+        Dev->>Claude: 调整
+        Claude->>Repo: 改代码
+    end
+
+    rect rgb(232, 245, 233)
+    Note over Dev,Repo: 关键：保持高频小步，别一次给一大堆需求
     end
 ```
 
-### 实战案例：重构遗留代码
+### 实战：重构 2000 行的遗留代码
 
-**背景**：接手一个遗留项目，代码质量差，需要重构。
+接手一个项目，`src/services/UserService.ts` 单文件 2000 行，鉴权、邮件、日志全混在一起。下面是和 Claude 一起一步步剥离它的全过程。
 
-#### 对话开始
+#### 第 1 步：让 Claude 摸清问题，自己别先下结论
 
-```
-我：这个项目代码太乱了，我给你看一下。
-
-Claude：好的，我看看。
-
-（Claude读取代码）
-
-我看到了几个问题：
-1. 一个文件2000行，职责不清晰
-2. 大量重复代码
-3. 没有类型定义，全是any
-4. 错误处理缺失
-5. 测试覆盖率0%
-
-你想从哪里开始重构？
-```
+不要一上来就问"怎么拆"，先问"有什么问题"——这样能拿到 Claude 自己的判断，比你强行命令它按你的想法做更可靠。
 
 ```
-我：先从最大的文件开始，src/services/UserService.ts，2000行。
-
-Claude：我先分析这个文件的职责。
-
-（Claude分析文件）
-
-这个文件混入了太多职责：
-- 用户CRUD
-- 认证逻辑
-- 权限校验
-- 邮件发送
-- 日志记录
-- 数据验证
-
-建议拆分成：
-- UserService（用户CRUD）
-- AuthService（认证）
-- PermissionService（权限）
-- NotificationService（通知）
-- ValidationService（验证）
-
-我先拆分？
+我：这个项目代码太乱了，先看 src/services/UserService.ts，2000 行。
+不要急着改，先回答我三个问题：
+1. 这个文件混了几类职责？分别在哪些行附近？
+2. 最严重的代码问题是什么（top 3）？
+3. 如果要重构，从哪里下手投入产出比最高？
 ```
 
-```
-我：好，先拆分UserService和AuthService。
+Claude 读完给出的判断：
+- **6 类职责**：CRUD（行 1-200）、认证（行 200-600）、权限（行 600-900）、邮件发送（行 900-1200）、日志格式化（行 1200-1500）、数据验证（行 1500-2000）
+- **Top 3 问题**：全 `any` 类型、错误处理散落各处（70+ 个不一致的 try-catch）、0 测试覆盖
+- **下手顺序**：先按职责拆 → 再处理重复 → 最后补类型和测试。先拆是因为后两件事在 2000 行单文件里做没法 review
 
-Claude：好的，我先提取认证相关的代码到AuthService。
+#### 第 2 步：拆 AuthService（保持外部接口不变）
+
+```
+我：先把认证相关的代码拆到 AuthService。要求：
+1. 保持所有调用方的 import 路径暂时不变（用 re-export 桥接）
+2. 提取后写一个 import 兼容层，让现有 controller 不用改
+3. 列出所有需要后续删除的"临时 re-export"，方便我们之后清理
 ```
 
-**Claude执行重构**：
+要求 "临时桥接" 这种细节很关键——直接拆 import 会让 git diff 爆炸，没法 review。
+
+拆完后核心长这样：
+
 ```typescript
-// 提取前：UserService.ts（2000行）
-export class UserService {
-  async createUser(data: any) {
-    // 验证
-    if (!data.email) throw new Error('邮箱必填');
-    if (!data.password) throw new Error('密码必填');
-    
-    // 密码加密
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    
-    // 创建用户
-    const user = await db.users.create({
-      email: data.email,
-      password: hashedPassword
-    });
-    
-    // 发送欢迎邮件
-    await sendEmail(user.email, '欢迎注册');
-    
-    return user;
-  }
-  
-  async login(email: string, password: string) {
-    const user = await db.users.findOne({ email });
-    if (!user) throw new Error('用户不存在');
-    
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new Error('密码错误');
-    
-    const token = jwt.sign({ userId: user.id }, SECRET);
-    return { token, user };
-  }
+// 拆之前：UserService.createUser 里塞了密码加密、写库、发欢迎邮件
+async createUser(data: any) {
+  if (!data.email) throw new Error('邮箱必填');
+  const hashed = await bcrypt.hash(data.password, 10);
+  const user = await db.users.create({ email: data.email, password: hashed });
+  await sendEmail(user.email, '欢迎注册');   // CRUD 里混了副作用
+  return user;
 }
 
-// 提取后：AuthService.ts（专注认证）
+// 拆之后：AuthService 只关心认证
 export class AuthService {
-  async register(data: RegisterDto) {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    const user = await db.users.create({
-      email: data.email,
-      password: hashedPassword
-    });
-    await notificationService.sendWelcomeEmail(user.email);
-    return user;
-  }
-  
   async login(credentials: LoginDto) {
     const user = await this.validateUser(credentials.email, credentials.password);
-    const token = this.generateToken(user);
-    return { token, user };
+    return { token: this.generateToken(user), user };
   }
-  
+
   private async validateUser(email: string, password: string) {
     const user = await db.users.findOne({ email });
     if (!user) throw new UnauthorizedError('用户不存在');
-    
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new UnauthorizedError('密码错误');
-    
+    if (!(await bcrypt.compare(password, user.password)))
+      throw new UnauthorizedError('密码错误');
     return user;
   }
-  
-  private generateToken(user: User): string {
+
+  private generateToken(user: User) {
     return jwt.sign({ userId: user.id }, SECRET, { expiresIn: '7d' });
   }
 }
 
-// 提取后：UserService.ts（专注用户CRUD）
-export class UserService {
-  async create(data: CreateUserDto) {
-    return await db.users.create(data);
-  }
-  
-  async findById(id: string) {
-    return await db.users.findById(id);
-  }
-  
-  async update(id: string, data: UpdateUserDto) {
-    return await db.users.findByIdAndUpdate(id, data);
-  }
-}
+// 桥接层：保持老 import 可用，标注"待清理"
+// services/UserService.ts
+/** @deprecated use AuthService.login */
+export { login } from './AuthService';
 ```
 
+#### 第 3 步：让 Claude 自己发现重复，不要预设答案
+
 ```
-我：拆分后清晰多了。现在处理重复代码。
-
-Claude：我扫描了一下，发现重复代码主要在：
-1. 错误处理（try-catch重复）
-2. 数据验证（验证逻辑重复）
-3. 日志记录（日志格式重复）
-
-我先提取错误处理的通用逻辑？
+我：拆完干净多了。现在扫一遍剩下的代码，找出 3-5 处最值得抽公共的重复。
+对每处给出：
+- 重复出现的次数
+- 抽取后能省多少行
+- 抽取方式（utility 函数 / decorator / 基类）
 ```
 
-**Claude提取通用逻辑**：
+Claude 找出三处重复：
+- try-catch 模板（出现 47 次，抽成 `withErrorHandler` 高阶函数省约 280 行）
+- 邮箱/密码验证（出现 12 次，抽成 `Validator` 工具对象省 60 行）
+- 日志格式化（出现 23 次，已有 `logger`，建议统一调用习惯，不需要新抽取）
+
+我让它先实现前两个：
+
 ```typescript
-// 提取通用错误处理
-export async function withErrorHandler<T>(
-  fn: () => Promise<T>,
-  errorMessage?: string
-): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    logger.error('Operation failed', { error, errorMessage });
-    throw new AppError(errorMessage || '操作失败', error);
+export async function withErrorHandler<T>(fn: () => Promise<T>, msg?: string): Promise<T> {
+  try { return await fn(); }
+  catch (e) {
+    logger.error('Operation failed', { error: e, msg });
+    throw new AppError(msg || '操作失败', e);
   }
 }
 
-// 使用
-export class UserService {
-  async findById(id: string) {
-    return withErrorHandler(
-      () => db.users.findById(id),
-      '查询用户失败'
-    );
-  }
-}
-
-// 提取通用验证
-export class Validator {
-  static email(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-  
-  static password(password: string): boolean {
-    return password.length >= 8;
-  }
-  
-  static required(value: any): boolean {
-    return value !== null && value !== undefined && value !== '';
-  }
-}
-
-// 使用
-export class AuthService {
-  async register(data: RegisterDto) {
-    if (!Validator.email(data.email)) {
-      throw new ValidationError('邮箱格式不正确');
-    }
-    if (!Validator.password(data.password)) {
-      throw new ValidationError('密码至少8位');
-    }
-    // ...
-  }
-}
+export const Validator = {
+  email: (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e),
+  password: (p: string) => p.length >= 8,
+};
 ```
 
-```
-我：代码质量提升很多了。现在加类型定义。
+#### 第 4 步：替换 any，发现历史 bug
 
-Claude：好的，我先定义核心类型，然后逐步替换any。
+```
+我：把 any 全部换成实际类型。如果发现某处类型对不上是历史 bug（比如调用方传的字段实际是 string，
+但被当 number 用），先标 TODO 再继续，最后给我一份 bug 清单。
 ```
 
-**Claude添加类型定义**：
+这一步意外捞出 5 个潜伏 bug：
+- `user.role` 在两处被当成布尔值（`if (user.role)` 永远为真，因为是字符串 `'admin'` / `'user'`）
+- `metadata` 字段在数据库里是 JSONB，老代码当成字符串拼接
+- 日期字段在三处被当 timestamp（number），实际是 ISO string
+
+让 Claude 单独开一组 commit 修这些历史 bug，和重构本身分开提交。
+
+#### 第 5 步：补测试
+
+```
+我：给 AuthService 加测试。覆盖这几条路径：
+- login 成功 / 用户不存在 / 密码错误 / token 过期
+- register 成功 / 邮箱已存在 / 弱密码
+- 不要 mock 整个 db，用 testcontainers 起真实 Postgres
+```
+
 ```typescript
-// src/types/user.ts
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreateUserDto {
-  email: string;
-  password: string;
-  name: string;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  role?: 'admin' | 'user';
-}
-
-export interface LoginDto {
-  email: string;
-  password: string;
-}
-
-export interface RegisterDto {
-  email: string;
-  password: string;
-  name: string;
-}
-```
-
-```
-我：类型定义好了。现在加测试。
-
-Claude：好的，我先为核心功能写单元测试。
-```
-
-**Claude生成测试**：
-```typescript
-// src/services/__tests__/AuthService.test.ts
-import { AuthService } from '../AuthService';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-
 describe('AuthService', () => {
-  let authService: AuthService;
-  
-  beforeEach(() => {
-    authService = new AuthService();
+  it('错误密码应抛 UnauthorizedError', async () => {
+    await expect(authService.login({ email: 'a@b.com', password: 'wrong' }))
+      .rejects.toThrow('密码错误');
   });
-  
-  describe('login', () => {
-    it('应该返回token和用户信息', async () => {
-      const result = await authService.login({
-        email: 'test@example.com',
-        password: 'password123'
-      });
-      
-      expect(result).toHaveProperty('token');
-      expect(result).toHaveProperty('user');
-      expect(result.user.email).toBe('test@example.com');
-    });
-    
-    it('应该拒绝错误的密码', async () => {
-      await expect(
-        authService.login({
-          email: 'test@example.com',
-          password: 'wrongpassword'
-        })
-      ).rejects.toThrow('密码错误');
-    });
-  });
-  
-  describe('register', () => {
-    it('应该创建新用户', async () => {
-      const user = await authService.register({
-        email: 'new@example.com',
-        password: 'password123',
-        name: 'Test User'
-      });
-      
-      expect(user.email).toBe('new@example.com');
-      expect(user.name).toBe('Test User');
-    });
-  });
+  // 其他 case 类似
 });
 ```
 
+#### 第 6 步：复盘
+
 ```
-我：重构完成了，代码质量提升很大。总结一下成果？
-
-Claude：重构成果：
-
-**代码质量**：
-- 文件行数：2000行 → 5个文件，每个<300行
-- 重复代码：减少60%
-- 类型覆盖率：0% → 95%
-- 测试覆盖率：0% → 80%
-
-**可维护性**：
-- 职责清晰，单一职责原则
-- 错误处理统一
-- 验证逻辑复用
-- 类型安全
-
-**性能**：
-- 没有明显性能提升（主要是代码质量）
-
-接下来可以：
-1. 继续重构其他模块
-2. 添加集成测试
-3. 性能优化
-4. 文档完善
-
-要继续吗？
+我：把这次重构总结一下，输出：
+- 改动前 / 改动后对比表（文件数、行数、测试覆盖、类型覆盖）
+- 顺手修了多少历史 bug
+- 哪些环节如果重来会做得不一样
 ```
+
+Claude 总结的数据：单文件 2000 行 → 5 个文件均 < 300 行，重复代码砍掉六成，类型覆盖 0% → 95%，测试覆盖 0% → 80%，顺手修了 5 个历史 bug。
+
+"重来会做得不一样"的部分：第一步就应该让我先生成一份 import 依赖图，那样能更早发现 `PermissionService` 其实被 6 个地方反向依赖（重构到第三步才发现，多绕了半天）。
+
+#### 经验
+
+整个过程一天半。对话节奏的几个关键：
+- **第一步不要急着改，先让 Claude 给"诊断"**，能比你的预判更全面
+- **每一步只问一件事**，不要让它"一次性拆完所有 service"，那样 diff 没法 review
+- **遇到要动外部 API 的地方，要求加桥接层**（标注 deprecated）保持兼容
+- **重构和修 bug 用不同 commit**，方便回滚和 review
 
 ---
 
-## Spec Coding指南
+## Spec Coding 指南
 
-Spec Coding是从需求规格到代码实现的完整流程，强调先明确需求再写代码。
+Spec Coding 是另一种风格：先把规格写清楚，再让 Claude 一步步实现。适合 PRD 已经定型、不想反复改的场景。
 
-#### Spec Coding完整流程
+#### 完整流程
 
 ```mermaid
 flowchart TD
-    A[PRD需求文档] --> B[需求理解与澄清]
-    B --> C{需求明确?}
+    A[PRD 文档] --> B[需求澄清]
+    B --> C{逻辑是否自洽}
     C -->|否| B
     C -->|是| D[技术方案设计]
-    D --> E[数据库schema设计]
-    E --> F[API接口设计]
-    F --> G[数据库迁移实现]
-    G --> H[API控制器实现]
-    H --> I[前端组件实现]
-    I --> J[功能测试]
-    J --> K{测试通过?}
-    K -->|否| L[修复问题]
+    D --> E[Schema 设计]
+    E --> F[API 设计]
+    F --> G[数据库迁移]
+    G --> H[控制器实现]
+    H --> I[前端组件]
+    I --> J[测试]
+    J --> K{测试通过}
+    K -->|否| L[修复]
     L --> J
-    K -->|是| M[部署文档生成]
-    M --> N[部署上线]
-    
-    style A fill:#e1f5ff
-    style N fill:#c8e6c9
-    style K fill:#fff9c4
+    K -->|是| M[部署文档]
+    M --> N[上线]
+
+    classDef start fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef proc fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef dec fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c;
+    classDef done fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#1b5e20;
+    class A start;
+    class B,D,E,F,G,H,I,J,L,M proc;
+    class C,K dec;
+    class N done;
 ```
 
-### 实战案例：从PRD到可运行代码
+### 实战：用户反馈系统
 
-**背景**：产品经理给了一个PRD（产品需求文档），需要实现一个用户反馈系统。
+PRD 拿到手，先做一遍澄清，再让 Claude 出方案。下面是从产品文档到部署文档的完整对话流。
 
-#### 第一步：理解需求
+#### 第 1 步：把 PRD 念给 Claude，先问清楚
 
-```
-我：产品经理给了PRD，我给你念一下核心需求：
-
-用户反馈系统需求：
-1. 用户可以提交反馈（文本、截图、日志）
-2. 反馈分类（Bug、功能建议、其他）
-3. 优先级标记（低、中、高、紧急）
-4. 管理员可以查看和处理反馈
-5. 反馈状态流转（待处理→处理中→已解决→已关闭）
-6. 用户可以查看自己反馈的处理进度
-
-非功能需求：
-- 反馈提交后3秒内响应
-- 支持离线提交，联网后自动同步
-- 数据安全，用户反馈加密存储
-- 支持批量导出反馈
-
-你先分析一下这个需求，看看有没有不清楚的地方？
-```
+注意提示词最后那句"告诉我有哪些地方说得不够清楚"——这是 Spec Coding 的灵魂，**让 Claude 主动找模糊点**，比你自己看一遍 PRD 全。
 
 ```
-Claude：我分析了一下，有几个问题需要确认：
+我：PRD 大致如下：
+- 用户提交反馈（文本、截图、日志），分类（Bug / 建议 / 其他），优先级 4 档
+- 管理员处理反馈，状态流转：待处理 → 处理中 → 已解决 → 已关闭
+- 用户能查自己反馈的进度
 
-1. **用户身份**
-   - 是否需要登录才能提交反馈？
-   - 匿名用户是否可以提交？
+非功能要求：3 秒响应、离线提交联网自动同步、加密存储、可批量导出。
 
-2. **反馈附件**
-   - 截图大小限制？
-   - 日志文件大小限制？
-   - 支持哪些格式？
-
-3. **管理员权限**
-   - 谁是管理员？需要权限系统吗？
-   - 管理员可以修改反馈内容吗？
-
-4. **通知机制**
-   - 反馈状态变更需要通知用户吗？
-   - 用什么方式通知（邮件、站内信、推送）？
-
-5. **数据保留**
-   - 反馈保留多久？
-   - 已关闭的反馈是否可以删除？
-
-这些问题明确后，我可以给出更精确的技术方案。
+不要急着给方案。先告诉我：
+1. PRD 里有哪些地方说得不够清楚？
+2. 哪些非功能需求会显著影响技术选型？
 ```
 
-```
-我：好的，我回答一下：
+Claude 反问了 5 个点：
+- **匿名提交？** 影响是否要登录、是否做防滥用
+- **附件大小和格式上限？** 影响存储方案和前端校验
+- **谁是管理员？能不能改用户提交的内容？** 影响权限模型
+- **通知渠道？** 影响是否要接邮件服务、是否要 WebSocket
+- **数据保留多久？** 影响清理任务和归档策略
 
-1. 需要登录才能提交，不支持匿名
-2. 截图限制5MB，日志限制10MB，支持jpg/png/txt/log
-3. 管理员是后台配置的用户ID，有专门的管理后台，管理员可以修改反馈内容
-4. 需要通知，用站内信+邮件
-5. 反馈保留1年，已关闭的反馈30天后自动删除
+并指出"3 秒响应 + 加密存储"是冲突的——同步加密会增加延迟，需要异步加密或硬件加速。
 
-现在清楚了，你给个技术方案？
-```
-
-#### 第二步：技术方案设计
+#### 第 2 步：补完答案，要 Claude 复述一遍
 
 ```
-Claude：清楚了。技术方案如下：
+我：回答：
+1. 必须登录，不接受匿名
+2. 附件：截图 5MB / 日志 10MB，格式 jpg/png/txt/log
+3. 管理员后台配置 user_id，可以改用户提交的内容（加审计日志）
+4. 邮件 + 站内信
+5. 反馈保留 1 年，已关闭的 30 天后删
 
-**技术栈选择**：
-- 前端：React 18 + TypeScript + Ant Design
-- 后端：Node.js + Express + TypeScript
-- 数据库：PostgreSQL（关系型数据适合反馈系统）
-- 文件存储：AWS S3（附件存储）
-- 通知：Nodemailer（邮件）+ WebSocket（站内信）
-- 离线存储：IndexedDB（前端）+ PouchDB（同步）
-
-**数据库设计**：
-```
-反馈表（feedbacks）
-- id: UUID
-- user_id: UUID (外键)
-- category: ENUM (bug, feature, other)
-- priority: ENUM (low, medium, high, urgent)
-- status: ENUM (pending, processing, resolved, closed)
-- title: VARCHAR(255)
-- content: TEXT
-- attachments: JSONB (附件信息数组)
-- created_at: TIMESTAMP
-- updated_at: TIMESTAMP
-- resolved_at: TIMESTAMP (可选)
-- resolved_by: UUID (管理员ID，可选)
-
-附件表（attachments）
-- id: UUID
-- feedback_id: UUID (外键)
-- file_name: VARCHAR(255)
-- file_url: TEXT (S3 URL)
-- file_size: INTEGER
-- file_type: VARCHAR(50)
-- created_at: TIMESTAMP
-
-通知表（notifications）
-- id: UUID
-- user_id: UUID
-- feedback_id: UUID (外键)
-- type: ENUM (status_change, comment)
-- message: TEXT
-- read: BOOLEAN
-- created_at: TIMESTAMP
+把你理解的需求用 3-5 行复述一遍，确认我们对齐了再给方案。
 ```
 
-**API设计**：
-```
-POST /api/feedbacks - 提交反馈
-GET /api/feedbacks - 获取反馈列表（管理员）
-GET /api/feedbacks/:id - 获取反馈详情
-PUT /api/feedbacks/:id - 更新反馈（管理员）
-DELETE /api/feedbacks/:id - 删除反馈（管理员）
-GET /api/feedbacks/my - 获取我的反馈列表
-POST /api/feedbacks/:id/attachments - 上传附件
-GET /api/notifications - 获取通知
-PUT /api/notifications/:id/read - 标记已读
-```
+Claude 复述时把"加密存储"拆成了"S3 服务端加密 + 应用层敏感字段加密"两层，并把"3 秒响应"明确为"P95 首屏 3 秒"。这两处复述帮我发现 PRD 里隐含的歧义，确认无误后再继续。
 
-**离线同步策略**：
-- 前端用IndexedDB存储离线反馈
-- 联网后用PouchDB同步到后端
-- 冲突解决：以后端为准
+#### 第 3 步：让 Claude 给方案，明确"要现成的"
 
-这个方案可行吗？
-```
+Claude 的栈：React 18 + Antd / Node + Express / PostgreSQL / S3 存附件 / 站内信走 WebSocket。离线方案是 IndexedDB 暂存，联网后用指数退避同步。
+
+**数据库**（3 张表）：`feedbacks` / `attachments` / `notifications`，按 user_id 和 status 建索引。
+
+**API**：
 
 ```
-我：方案可以。现在开始实现吧，先做数据库和API。
+POST /api/feedbacks                 提交反馈
+GET  /api/feedbacks                 列表（管理员）
+GET  /api/feedbacks/:id             详情
+PUT  /api/feedbacks/:id             更新（管理员）
+GET  /api/feedbacks/my              我的反馈
+POST /api/feedbacks/:id/attachments 上传附件
+GET  /api/notifications             通知列表
 ```
 
-#### 第三步：数据库实现
+我又追问了一句"为什么不用 GraphQL"——Claude 的回答是这个场景接口数少（< 10），用 REST 更简单，GraphQL 会引入额外的 schema 维护成本和缓存复杂度。这个判断我认。
 
-**Claude生成数据库迁移**：
+#### 第 4 步：建表（要求附迁移和回滚）
+
+```
+我：先把 feedbacks 表的迁移写了。要求：
+1. PostgreSQL，UUID 主键
+2. 同时给出 up 和 down 函数，down 必须可执行
+3. 索引说明每个索引的查询场景
+```
+
 ```typescript
 // src/migrations/001_create_feedbacks_table.ts
-import { Pool } from 'pg';
-
 export async function up(pool: Pool) {
   await pool.query(`
     CREATE TABLE feedbacks (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      category VARCHAR(20) NOT NULL CHECK (category IN ('bug', 'feature', 'other')),
-      priority VARCHAR(20) NOT NULL CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'resolved', 'closed')),
+      category VARCHAR(20) CHECK (category IN ('bug','feature','other')),
+      priority VARCHAR(20) CHECK (priority IN ('low','medium','high','urgent')),
+      status   VARCHAR(20) DEFAULT 'pending'
+        CHECK (status IN ('pending','processing','resolved','closed')),
       title VARCHAR(255) NOT NULL,
       content TEXT NOT NULL,
       attachments JSONB DEFAULT '[]',
       created_at TIMESTAMP DEFAULT NOW(),
-      updated_at TIMESTAMP DEFAULT NOW(),
       resolved_at TIMESTAMP,
       resolved_by UUID REFERENCES users(id)
     );
-    
+    -- 用户查自己反馈
     CREATE INDEX idx_feedbacks_user_id ON feedbacks(user_id);
-    CREATE INDEX idx_feedbacks_status ON feedbacks(status);
-    CREATE INDEX idx_feedbacks_priority ON feedbacks(priority);
+    -- 管理员按状态筛选
+    CREATE INDEX idx_feedbacks_status  ON feedbacks(status);
   `);
 }
 
 export async function down(pool: Pool) {
-  await pool.query('DROP TABLE feedbacks');
+  await pool.query(`DROP TABLE IF EXISTS feedbacks CASCADE`);
 }
+// attachments / notifications 两张表的迁移类似
+```
+
+#### 第 5 步：API 控制器（要求边界情况覆盖）
+
+```
+我：写 createFeedback 接口。
+- 附件先传 S3，再把元信息写入 feedbacks.attachments
+- 如果 S3 上传成功但数据库写入失败，要异步清理 S3 上的孤儿文件
+- 边界：附件超过大小限制、不支持的格式，提前拒绝
+- 限流：同一用户 1 分钟最多 10 条
 ```
 
 ```typescript
-// src/migrations/002_create_attachments_table.ts
-export async function up(pool: Pool) {
-  await pool.query(`
-    CREATE TABLE attachments (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      feedback_id UUID NOT NULL REFERENCES feedbacks(id) ON DELETE CASCADE,
-      file_name VARCHAR(255) NOT NULL,
-      file_url TEXT NOT NULL,
-      file_size INTEGER NOT NULL,
-      file_type VARCHAR(50) NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-    
-    CREATE INDEX idx_attachments_feedback_id ON attachments(feedback_id);
-  `);
-}
+async createFeedback(req: Request, res: Response) {
+  try {
+    const userId = req.user.id;
+    const { category, priority, title, content } = req.body;
+    const attachments = [];
+    const uploadedKeys: string[] = [];   // 失败时清理用
 
-export async function down(pool: Pool) {
-  await pool.query('DROP TABLE attachments');
-}
-```
+    for (const file of (req.files as Express.Multer.File[]) ?? []) {
+      validateAttachmentOrThrow(file);  // 大小/格式校验
+      const { url, key } = await s3Service.uploadFile(file);
+      uploadedKeys.push(key);
+      attachments.push({
+        fileName: file.originalname, fileUrl: url,
+        fileSize: file.size, fileType: file.mimetype,
+      });
+    }
 
-```typescript
-// src/migrations/003_create_notifications_table.ts
-export async function up(pool: Pool) {
-  await pool.query(`
-    CREATE TABLE notifications (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      feedback_id UUID REFERENCES feedbacks(id) ON DELETE CASCADE,
-      type VARCHAR(20) NOT NULL CHECK (type IN ('status_change', 'comment')),
-      message TEXT NOT NULL,
-      read BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-    
-    CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-    CREATE INDEX idx_notifications_read ON notifications(read);
-  `);
-}
-
-export async function down(pool: Pool) {
-  await pool.query('DROP TABLE notifications');
-}
-```
-
-#### 第四步：API实现
-
-**Claude生成API代码**：
-```typescript
-// src/types/feedback.ts
-export interface Feedback {
-  id: string;
-  userId: string;
-  category: 'bug' | 'feature' | 'other';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'processing' | 'resolved' | 'closed';
-  title: string;
-  content: string;
-  attachments: Attachment[];
-  createdAt: Date;
-  updatedAt: Date;
-  resolvedAt?: Date;
-  resolvedBy?: string;
-}
-
-export interface CreateFeedbackDto {
-  category: 'bug' | 'feature' | 'other';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  title: string;
-  content: string;
-  attachments?: File[];
-}
-
-export interface UpdateFeedbackDto {
-  status?: 'pending' | 'processing' | 'resolved' | 'closed';
-  title?: string;
-  content?: string;
-  resolvedBy?: string;
-}
-
-export interface Attachment {
-  id: string;
-  feedbackId: string;
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  fileType: string;
-  createdAt: Date;
-}
-```
-
-```typescript
-// src/controllers/feedbackController.ts
-import { Request, Response } from 'express';
-import { FeedbackService } from '../services/FeedbackService';
-import { S3Service } from '../services/S3Service';
-import { NotificationService } from '../services/NotificationService';
-
-const feedbackService = new FeedbackService();
-const s3Service = new S3Service();
-const notificationService = new NotificationService();
-
-export class FeedbackController {
-  async createFeedback(req: Request, res: Response) {
     try {
-      const userId = req.user.id;
-      const { category, priority, title, content } = req.body;
-      
-      // 上传附件
-      const attachments = [];
-      if (req.files) {
-        for (const file of req.files as Express.Multer.File[]) {
-          const fileUrl = await s3Service.uploadFile(file);
-          attachments.push({
-            fileName: file.originalname,
-            fileUrl,
-            fileSize: file.size,
-            fileType: file.mimetype
-          });
-        }
-      }
-      
-      // 创建反馈
       const feedback = await feedbackService.create({
-        userId,
-        category,
-        priority,
-        title,
-        content,
-        attachments
+        userId, category, priority, title, content, attachments,
       });
-      
       res.status(201).json(feedback);
-    } catch (error) {
-      res.status(500).json({ error: '创建反馈失败' });
+    } catch (dbError) {
+      // 数据库失败：异步清理 S3 孤儿文件
+      queueOrphanCleanup(uploadedKeys);
+      throw dbError;
     }
-  }
-  
-  async getFeedbacks(req: Request, res: Response) {
-    try {
-      const { status, priority, page = 1, limit = 20 } = req.query;
-      
-      const feedbacks = await feedbackService.findAll({
-        status: status as string,
-        priority: priority as string,
-        page: Number(page),
-        limit: Number(limit)
-      });
-      
-      res.json(feedbacks);
-    } catch (error) {
-      res.status(500).json({ error: '获取反馈列表失败' });
-    }
-  }
-  
-  async updateFeedback(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-      const adminId = req.user.id;
-      
-      // 获取原反馈
-      const oldFeedback = await feedbackService.findById(id);
-      if (!oldFeedback) {
-        return res.status(404).json({ error: '反馈不存在' });
-      }
-      
-      // 更新反馈
-      const feedback = await feedbackService.update(id, {
-        ...updates,
-        resolvedBy: updates.status === 'resolved' ? adminId : undefined,
-        resolvedAt: updates.status === 'resolved' ? new Date() : undefined
-      });
-      
-      // 发送通知
-      if (updates.status && updates.status !== oldFeedback.status) {
-        await notificationService.create({
-          userId: oldFeedback.userId,
-          feedbackId: id,
-          type: 'status_change',
-          message: `你的反馈状态已更新为${updates.status}`
-        });
-        
-        // 发送邮件
-        await notificationService.sendEmail(
-          oldFeedback.userId,
-          '反馈状态更新',
-          `你的反馈"${oldFeedback.title}"状态已更新为${updates.status}`
-        );
-      }
-      
-      res.json(feedback);
-    } catch (error) {
-      res.status(500).json({ error: '更新反馈失败' });
-    }
-  }
-  
-  async getMyFeedbacks(req: Request, res: Response) {
-    try {
-      const userId = req.user.id;
-      const feedbacks = await feedbackService.findByUserId(userId);
-      
-      res.json(feedbacks);
-    } catch (error) {
-      res.status(500).json({ error: '获取我的反馈失败' });
-    }
+  } catch (e) {
+    res.status(500).json({ error: '创建反馈失败' });
   }
 }
 ```
 
-#### 第五步：前端实现
+#### 第 6 步：前端（离线优先）
 
-#### 用户反馈系统数据流图
-
-```mermaid
-flowchart LR
-    subgraph "用户端"
-        A[用户提交反馈]
-        B[离线存储IndexedDB]
-        C[联网检测]
-    end
-    
-    subgraph "同步层"
-        D[PouchDB同步]
-        E[重试机制]
-    end
-    
-    subgraph "服务端"
-        F[API接收]
-        G[文件上传S3]
-        H[数据库存储]
-    end
-    
-    subgraph "通知层"
-        I[站内信WebSocket]
-        J[邮件Nodemailer]
-    end
-    
-    A --> B
-    B --> C
-    C -->|在线| F
-    C -->|离线| D
-    D --> E
-    E --> F
-    F --> G
-    F --> H
-    H --> I
-    H --> J
-    
-    style A fill:#e1f5ff
-    style H fill:#c8e6c9
-    style C fill:#fff9c4
-```
-
-**Claude生成前端代码**：
-```tsx
-// src/components/FeedbackForm.tsx
-import { useState } from 'react';
-import { Form, Input, Select, Button, Upload, message } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
-
-interface FeedbackFormProps {
-  onSubmit: (data: any) => Promise<void>;
-}
-
-export function FeedbackForm({ onSubmit }: FeedbackFormProps) {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [fileList, setFileList] = useState<any[]>([]);
-  
-  const handleSubmit = async (values: any) => {
-    setLoading(true);
-    try {
-      // 验证文件大小
-      const oversizedFiles = fileList.filter(f => f.size > 10 * 1024 * 1024);
-      if (oversizedFiles.length > 0) {
-        message.error('文件大小不能超过10MB');
-        return;
-      }
-      
-      await onSubmit({
-        ...values,
-        attachments: fileList
-      });
-      
-      form.resetFields();
-      setFileList([]);
-      message.success('反馈提交成功');
-    } catch (error) {
-      message.error('提交失败，请重试');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const uploadProps = {
-    beforeUpload: (file: File) => {
-      const isValidType = ['image/jpeg', 'image/png', 'text/plain', 'application/octet-stream'].includes(file.type);
-      if (!isValidType) {
-        message.error('只支持jpg/png/txt/log格式');
-      }
-      return isValidType;
-    },
-    onChange: (info: any) => {
-      setFileList(info.fileList);
-    },
-    fileList
-  };
-  
-  return (
-    <Form form={form} onFinish={handleSubmit} layout="vertical">
-      <Form.Item
-        label="反馈类型"
-        name="category"
-        rules={[{ required: true, message: '请选择反馈类型' }]}
-      >
-        <Select>
-          <Select.Option value="bug">Bug</Select.Option>
-          <Select.Option value="feature">功能建议</Select.Option>
-          <Select.Option value="other">其他</Select.Option>
-        </Select>
-      </Form.Item>
-      
-      <Form.Item
-        label="优先级"
-        name="priority"
-        rules={[{ required: true, message: '请选择优先级' }]}
-      >
-        <Select>
-          <Select.Option value="low">低</Select.Option>
-          <Select.Option value="medium">中</Select.Option>
-          <Select.Option value="high">高</Select.Option>
-          <Select.Option value="urgent">紧急</Select.Option>
-        </Select>
-      </Form.Item>
-      
-      <Form.Item
-        label="标题"
-        name="title"
-        rules={[{ required: true, message: '请输入标题' }]}
-      >
-        <Input maxLength={255} placeholder="简要描述问题" />
-      </Form.Item>
-      
-      <Form.Item
-        label="详细描述"
-        name="content"
-        rules={[{ required: true, message: '请输入详细描述' }]}
-      >
-        <Input.TextArea rows={6} placeholder="详细描述问题或建议" />
-      </Form.Item>
-      
-      <Form.Item label="附件">
-        <Upload {...uploadProps} multiple>
-          <Button icon={<UploadOutlined />}>上传附件</Button>
-        </Upload>
-        <div style={{ marginTop: 8, color: '#999' }}>
-          支持jpg/png/txt/log格式，单个文件最大10MB
-        </div>
-      </Form.Item>
-      
-      <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading} block>
-          提交反馈
-        </Button>
-      </Form.Item>
-    </Form>
-  );
-}
-```
-
-```tsx
-// src/components/OfflineFeedback.tsx
-import { useState, useEffect } from 'react';
-import { openDB } from 'idb';
-import PouchDB from 'pouchdb';
-
-#### 离线同步流程图
+#### 反馈系统数据流
 
 ```mermaid
 flowchart TD
-    A[用户提交反馈] --> B{网络状态检测}
-    B -->|在线| C[直接提交到服务器]
-    B -->|离线| D[保存到IndexedDB]
-    C --> E[服务器处理]
-    E --> F[返回成功]
-    D --> G[显示离线提示]
-    G --> H[监听网络状态]
-    H --> I{网络恢复?}
-    I -->|否| H
-    I -->|是| J[读取本地数据]
-    J --> K[批量同步到服务器]
-    K --> L{同步成功?}
-    L -->|是| M[删除本地数据]
-    L -->|否| N[标记失败]
-    N --> O[等待下次重试]
-    M --> P[更新UI状态]
-    
-    style B fill:#fff9c4
-    style I fill:#fff9c4
-    style L fill:#fff9c4
-    style F fill:#c8e6c9
-    style P fill:#c8e6c9
-```
+    A[用户提交反馈] --> B{在线}
+    B -->|是| C[POST API]
+    B -->|否| D[(IndexedDB 暂存)]
+    D --> E[监听网络恢复]
+    E --> F[PouchDB 同步]
+    F --> C
+    C --> G[后端处理]
+    G --> H[(PostgreSQL)]
+    G --> I[(S3 附件)]
+    G --> J[推送通知]
 
-export function OfflineFeedback() {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pendingFeedbacks, setPendingFeedbacks] = useState<any[]>([]);
-  
-  useEffect(() => {
-    // 监听网络状态
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // 加载离线反馈
-    loadPendingFeedbacks();
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-  
-  useEffect(() => {
-    // 联网后自动同步
-    if (isOnline && pendingFeedbacks.length > 0) {
-      syncPendingFeedbacks();
-    }
-  }, [isOnline]);
-  
-  const loadPendingFeedbacks = async () => {
-    const db = await openDB('feedback-db', 1);
-    const feedbacks = await db.getAll('pending-feedbacks');
-    setPendingFeedbacks(feedbacks);
-  };
-  
-  const syncPendingFeedbacks = async () => {
-    for (const feedback of pendingFeedbacks) {
-      try {
-        await fetch('/api/feedbacks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(feedback.data)
-        });
-        
-        // 删除已同步的反馈
-        const db = await openDB('feedback-db', 1);
-        await db.delete('pending-feedbacks', feedback.id);
-      } catch (error) {
-        console.error('同步失败:', error);
-      }
-    }
-    
-    loadPendingFeedbacks();
-  };
-  
-  const saveOfflineFeedback = async (data: any) => {
-    const db = await openDB('feedback-db', 1);
-    await db.put('pending-feedbacks', {
-      id: Date.now().toString(),
-      data,
-      timestamp: new Date()
-    });
-    
-    loadPendingFeedbacks();
-  };
-  
-  if (!isOnline) {
-    return (
-      <div style={{ padding: 16, background: '#fff3cd', borderRadius: 4 }}>
-        <strong>离线模式</strong>
-        <p>反馈将保存在本地，联网后自动同步</p>
-        {pendingFeedbacks.length > 0 && (
-          <p>待同步反馈：{pendingFeedbacks.length}条</p>
-        )}
-      </div>
-    );
-  }
-  
-  return null;
-}
-```
-
-#### 第六步：测试
-
-```
-我：前后端都做完了，现在测试一下。
-
-Claude：好的，我帮你测试：
-
-1. **功能测试**
-   - 提交反馈（带附件）
-   - 查看反馈列表
-   - 更新反馈状态
-   - 离线提交和同步
-
-2. **性能测试**
-   - 并发提交100个反馈
-   - 附件上传性能
-
-3. **安全测试**
-   - 文件类型验证
-   - 文件大小限制
-   - 权限校验
-
-先测哪个？
+    classDef input fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef dec fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c;
+    classDef offline fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f;
+    classDef proc fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef store fill:#f1f8e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    class A input;
+    class B dec;
+    class D,E,F offline;
+    class C,G,J proc;
+    class H,I store;
 ```
 
 ```
-我：先测功能。
-
-Claude：好的，我运行功能测试。
-
-（Claude执行测试）
-
-测试结果：
-- ✅ 提交反馈正常
-- ✅ 附件上传正常
-- ✅ 状态更新正常
-- ✅ 通知发送正常
-- ⚠️ 发现问题：离线同步时，如果网络中断，会丢失数据
-
-需要修复离线同步的可靠性？
+我：写一个离线优先的 hook，让组件不用关心在线状态。
+关键约束：
+- 离线时立即返回成功（UI 显示"已暂存"）
+- 联网后自动批量同步，按 createdAt 倒序排
+- 同步失败重试 3 次（指数退避），3 次都失败标记 failed 但保留
 ```
 
-```
-我：需要修复。
+```tsx
+// useFeedback.ts —— 离线优先
+export const useFeedback = () => {
+  const submit = useMutation({
+    mutationFn: async (data: CreateFeedbackDto) => {
+      if (navigator.onLine) return api.post('/feedbacks', data);
+      await idb.put('pending', { id: uuid(), data, createdAt: Date.now() });
+      return { offline: true };
+    },
+  });
+  return { submit };
+};
 
-Claude：好的，我添加重试机制和本地备份。
-```
-
-**Claude修复离线同步**：
-```typescript
-const syncPendingFeedbacks = async () => {
-  const maxRetries = 3;
-  
-  for (const feedback of pendingFeedbacks) {
-    let retryCount = 0;
-    let success = false;
-    
-    while (retryCount < maxRetries && !success) {
-      try {
-        await fetch('/api/feedbacks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(feedback.data)
-        });
-        
-        success = true;
-        
-        // 删除已同步的反馈
-        const db = await openDB('feedback-db', 1);
-        await db.delete('pending-feedbacks', feedback.id);
-      } catch (error) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          console.error('同步失败，已达到最大重试次数:', error);
-          // 标记为失败，但不删除
-          const db = await openDB('feedback-db', 1);
-          await db.put('pending-feedbacks', {
-            ...feedback,
-            syncFailed: true,
-            lastError: error.message
-          });
-        } else {
-          // 等待后重试
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-        }
-      }
-    }
-  }
-  
-  loadPendingFeedbacks();
+// FeedbackForm.tsx —— UI 骨架
+export const FeedbackForm = () => {
+  const { submit } = useFeedback();
+  return (
+    <Form onFinish={v => submit.mutate(v)}>
+      <Form.Item name="category"><Select options={CATEGORY_OPTIONS} /></Form.Item>
+      <Form.Item name="priority"><Select options={PRIORITY_OPTIONS} /></Form.Item>
+      <Form.Item name="title"><Input /></Form.Item>
+      <Form.Item name="content"><Input.TextArea /></Form.Item>
+      <Upload multiple beforeUpload={validateAttachment}>上传附件</Upload>
+      <Button htmlType="submit">提交</Button>
+    </Form>
+  );
 };
 ```
 
-```
-我：修复完成。现在整体测试一下吧。
+#### 离线同步时序
 
-Claude：好的，运行完整测试套件。
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant F as 前端
+    participant DB as IndexedDB
+    participant API as 后端
+    participant P as PostgreSQL
 
-测试结果：
-- ✅ 功能测试：全部通过
-- ✅ 性能测试：100并发响应时间<500ms
-- ✅ 安全测试：文件验证正常
-- ✅ 离线同步：重试机制正常
-
-可以部署了。要生成部署文档吗？
-```
-
-#### 第七步：部署
-
-**Claude生成部署文档**：
-```markdown
-# 用户反馈系统部署文档
-
-## 环境要求
-- Node.js 18+
-- PostgreSQL 14+
-- AWS S3账户
-- SMTP服务器（邮件发送）
-
-## 环境变量
-```env
-DATABASE_URL=postgresql://...
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-AWS_S3_BUCKET=feedback-attachments
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASSWORD=...
+    U->>F: 提交反馈
+    F->>F: 检查网络
+    alt 在线
+        F->>API: POST /feedbacks
+        API->>P: 写入
+        API-->>F: 200 OK
+    else 离线
+        F->>DB: 存入 pending
+        F-->>U: 已暂存
+        Note over F,DB: 网络恢复后触发
+        F->>DB: 读 pending 列表
+        F->>API: 批量 POST + 指数退避
+        API-->>F: 成功
+        F->>DB: 清空 pending
+    end
 ```
 
-## 部署步骤
+同步函数本身很短：
 
-### 1. 数据库迁移
-```bash
-npm run migrate
+```typescript
+const syncFeedbacks = async (items: PendingItem[]) => {
+  for (const item of items) {
+    await withRetry(
+      async () => { await api.post('/feedbacks', item.data); await idb.delete('pending', item.id); },
+      { maxRetries: 3 },
+    );
+  }
+};
 ```
 
-### 2. 构建前端
-```bash
-cd frontend
-npm run build
-```
-
-### 3. 启动后端
-```bash
-cd backend
-npm run start
-```
-
-### 4. 配置Nginx
-```nginx
-server {
-    listen 80;
-    server_name feedback.example.com;
-    
-    location / {
-        root /var/www/feedback-frontend;
-        try_files $uri $uri/ /index.html;
-    }
-    
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### 5. 配置定时任务（清理旧反馈）
-```cron
-# 每天凌晨2点清理30天前已关闭的反馈
-0 2 * * * cd /var/www/feedback-backend && npm run cleanup
-```
-```
+#### 第 7 步：测试（让 Claude 主动找边界）
 
 ```
-我：部署文档很详细。总结一下这个Spec Coding的流程？
-
-Claude：Spec Coding的完整流程：
-
-1. **需求理解**：深入分析PRD，提出澄清问题
-2. **技术方案**：设计技术栈、数据库、API
-3. **数据库实现**：编写迁移脚本
-4. **API实现**：编写控制器和服务层
-5. **前端实现**：实现UI和交互
-6. **测试验证**：功能、性能、安全测试
-7. **部署上线**：编写部署文档和脚本
-
-关键点：
-- 先明确需求再动手
-- 每一步都有文档和代码
-- 测试驱动，发现问题及时修复
-- 考虑边界情况（离线、重试）
-
-这个流程可以复用到任何项目，减少返工，提高质量。
+我：给反馈接口加测试。除了正常路径，我希望你主动想 5 个最容易出问题的边界，
+列出来后我们逐个写。不要只测 happy path。
 ```
+
+Claude 列出的 5 个边界：
+1. 未登录访问
+2. 附件超过大小限制
+3. 同一用户高频提交（限流）
+4. 附件上传成功但数据库失败（孤儿文件清理）
+5. 状态非法流转（已关闭 → 处理中）
+
+```typescript
+describe('FeedbackController', () => {
+  it('登录用户应能创建反馈', async () => {
+    const res = await request(app).post('/api/feedbacks')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ category: 'bug', priority: 'high', title: '登录失败', content: '...' });
+    expect(res.status).toBe(201);
+  });
+
+  it('未登录用户应被拒绝', async () => {
+    const res = await request(app).post('/api/feedbacks').send({});
+    expect(res.status).toBe(401);
+  });
+
+  it('附件超过 5MB 应被拒绝', async () => {
+    const big = Buffer.alloc(6 * 1024 * 1024);
+    const res = await request(app).post('/api/feedbacks')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('files', big, 'huge.png');
+    expect(res.status).toBe(413);
+  });
+  // 限流 / 孤儿清理 / 非法状态流转测试略
+});
+```
+
+#### 第 8 步：让 Claude 生成部署文档
+
+```
+我：照着 README 风格写一份部署文档。
+要求：从一台空白 Ubuntu 22.04 机器开始，照着抄就能上线。
+覆盖：依赖安装、环境变量、迁移、Nginx 配置、SSL、定时任务、回滚步骤。
+```
+
+输出的要点（节选）：
+```
+环境：Node ≥ 18 / PostgreSQL ≥ 14 / Redis ≥ 6
+环境变量：DATABASE_URL / S3_BUCKET / SMTP_HOST / JWT_SECRET / FRONTEND_URL
+步骤：
+  1. npm run migrate
+  2. npm run build
+  3. pm2 start ecosystem.config.js
+  4. Nginx 反向代理 + HTTPS（certbot）
+  5. cron 每天凌晨清理 30 天前的已关闭反馈
+回滚：
+  1. pm2 reload ecosystem.config.js --update-env（切回上版本镜像）
+  2. npm run migrate:rollback（如果上版本 schema 不兼容）
+```
+
+#### 经验
+
+Spec Coding 比 Vibe Coding 多花的时间，主要在第 1、2 步——把需求里隐藏的歧义全部澄清。这部分时间省不得，否则后面边写边改更费时间。三个高 ROI 的提示词技巧：
+- "**有哪些地方说得不够清楚**"——让 Claude 主动找模糊点
+- "**用 3-5 行复述一遍**"——验证它真的理解了
+- "**主动想 5 个最容易出问题的边界**"——比你列要更全
 
 ---
 
-## Skills应用场景
+## Skills 应用场景
 
-Claude Code的Skills是预定义的编程能力模块，可以快速解决特定问题。
+Skills 是 Claude Code 里的"能力插件"，针对某个常见场景预置好了流程和提示词。下面是日常用得最多的几个。
 
-#### Skills应用场景图
+#### 技能生态
 
 ```mermaid
 mindmap
-  root((Claude Code Skills))
+  root((Claude Skills))
     开发加速
       find-skills
       skill-creator
-      programmer-prompt-engineering-guide
+      prompt-engineering
     质量保证
       code-review
       webapp-testing
@@ -1415,2802 +873,1153 @@ mindmap
       pdf
     创意辅助
       brainstorming
-      documentation-generator
+      doc-generator
 ```
 
-### Skill 1：find-skills - 发现和安装Skills
-
-**场景**：需要找到合适的Skill来加速开发。
+### find-skills：找合适的 Skill
 
 ```
-我：我需要找一个React相关的Skill，帮我找找。
-
-Claude：好的，我用find-skills搜索React相关的Skills。
-
-（Claude执行搜索）
-
-找到以下React相关Skills：
-
-1. **vercel-react-best-practices** (216K+ 安装)
-   - Vercel官方React最佳实践
-   - 包含性能优化、代码规范
-   - 适合：React项目优化
-
-2. **frontend-design** (164K+ 安装)
-   - 前端设计指南
-   - UI/UX最佳实践
-   - 适合：前端设计决策
-
-3. **remotion-best-practices** (150K+ 安装)
-   - Remotion视频框架最佳实践
-   - 适合：视频相关项目
-
-4. **web-design-guidelines** (171K+ 安装)
-   - Web设计规范
-   - 响应式设计指南
-   - 适合：Web项目设计
-
-你要哪个？我帮你安装。
+我：我在做 React 项目，有什么能直接用的 Skill？
 ```
 
-```
-我：安装vercel-react-best-practices。
-
-Claude：好的，安装命令：
+Claude 列了几个候选：`vercel-react-best-practices`（Vercel 官方的 React 最佳实践）、`frontend-design`、`web-design-guidelines`。安装命令：
 
 ```bash
 npx skills add vercel/skills --skill vercel-react-best-practices
+claude "用 vercel-react-best-practices 帮我审查这个组件"
 ```
 
-安装完成后，你可以这样使用：
+### programmer-prompt-engineering-guide：写好提示词
 
-```bash
-claude "用vercel-react-best-practices优化这个React组件"
-```
+经常觉得"生成的代码不符合预期"，多半是提示词太糙。这个 Skill 的核心建议就一条：**把"目标 + 上下文 + 约束 + 示例"四样里至少补两样**。
 
-要我现在帮你优化一个组件吗？
-```
-
-### Skill 2：programmer-prompt-engineering-guide - 提示词工程
-
-**场景**：需要写出更好的提示词来让Claude Code生成更准确的代码。
+对比一下：
 
 ```
-我：我总觉得我的提示词不够精确，Claude Code生成的代码不太符合预期。你教我怎么写好提示词？
+× 优化这个函数
+○ 把这个函数从 O(n²) 降到 O(n)，输入是 1 万级别数组，要保持 API 不变
 
-Claude：好的，提示词工程有几个关键原则：
-
-**1. 明确目标**
-❌ 不好："优化这个函数"
-✅ 好："优化这个函数的时间复杂度，从O(n²)降到O(n)"
-
-**2. 提供上下文**
-❌ 不好："修复登录bug"
-✅ 好："修复登录bug：使用React+TypeScript，认证库@auth0/react-auth0，错误信息'Cannot read property of undefined'，相关文件src/components/Login.tsx"
-
-**3. 分步骤**
-❌ 不好："做一个电商系统"
-✅ 好："第一步：设计数据库schema；第二步：实现用户认证API；第三步：实现商品列表API"
-
-**4. 指定约束**
-❌ 不好："写一个排序算法"
-✅ 好："用JavaScript写一个快速排序算法，要求：时间复杂度O(n log n)，空间复杂度O(log n)，包含类型定义"
-
-**5. 提供示例**
-❌ 不好："写一个API接口"
-✅ 好："写一个用户管理API，参考这个格式：{id, name, email, role, createdAt}"
-
-我给你一个实战例子？
+× 写一个购物车组件
+○ 用 React + TS + Tailwind 写购物车：
+  - 商品行（图/名/价/数）、加减、删除、合计、空状态
+  - 用 Zustand 管状态，shadcn/ui 的 Card
+  - 数据结构：interface CartItem { id, name, price, quantity, image }
 ```
 
-```
-我：好，给我一个实战例子。
-
-Claude：好的，假设你要让Claude Code生成一个购物车组件。
-
-❌ 不好：
-```
-claude "写一个购物车组件"
-```
-
-✅ 好：
-```
-claude "
-用React + TypeScript + Tailwind CSS写一个购物车组件：
-
-需求：
-1. 显示商品列表（图片、名称、价格、数量）
-2. 可以增减数量
-3. 显示总价
-4. 有删除按钮
-5. 空购物车显示提示
-
-技术约束：
-- 使用shadcn/ui的Card组件
-- 用Zustand管理状态
-- 图片用next/image优化
-- 价格格式化为¥XX.XX
-
-参考这个数据结构：
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
-"
-```
-
-后者生成的代码会更精准，更符合你的需求。
-```
-
-### Skill 3：audit-website - 网站审计
-
-**场景**：需要审计网站的性能、SEO、可访问性。
+### audit-website：网站审计
 
 ```
-我：我的网站上线了，但不知道质量怎么样。帮我审计一下。
-
-Claude：好的，我用audit-website Skill全面审计你的网站。
-
-（Claude执行审计）
-
-审计报告：
-
-**性能评分：72/100**
-- 首次内容绘制（FCP）：2.1s（目标<1.8s）
-- 最大内容绘制（LCP）：3.5s（目标<2.5s）
-- 累积布局偏移（CLS）：0.08（目标<0.1）
-- ⚠️ 图片未优化，建议用WebP格式
-- ⚠️ CSS未压缩，建议用CSS压缩工具
-
-**SEO评分：85/100**
-- ✅ meta标签完整
-- ✅ 结构化数据正确
-- ⚠️ 缺少sitemap.xml
-- ⚠️ robots.txt配置不完整
-
-**可访问性评分：90/100**
-- ✅ 颜色对比度符合WCAG AA
-- ✅ 键盘导航可用
-- ⚠️ 部分图片缺少alt属性
-
-**安全评分：95/100**
-- ✅ HTTPS配置正确
-- ✅ CSP头部设置合理
-- ✅ 无已知安全漏洞
-
-建议优先修复：
-1. 图片优化（WebP格式，懒加载）
-2. 添加sitemap.xml
-3. 补充图片alt属性
-
-要我帮你修复这些问题吗？
+我：网站上线了，跑一遍全面审计。
 ```
 
-### Skill 4：brainstorming - 头脑风暴
+Claude 给的报告通常包含四个维度的分数（性能 / SEO / 可访问性 / 安全）和优先级排序的修复清单。比如性能这块常见问题是图片没上 WebP、CSS 没压缩、字体没 preload，按 LCP 影响排序。
 
-**场景**：需要为项目想名字、想功能点、想解决方案。
-
-```
-我：我要做一个AI写作助手，想不出好名字。帮我头脑风暴一下。
-
-Claude：好的，我用brainstorming Skill帮你想名字。
-
-（Claude执行头脑风暴）
-
-生成的名字分类：
-
-**科技感强**：
-- AIWriter Pro
-- SmartScribe
-- IntelliText
-- NeuralPen
-
-**文艺感强**：
-- 墨韵
-- 笔耕
-- 文心
-- 思泉
-
-**现代感强**：
-- WriteFlow
-- TextMate
-- InkAI
-- DraftBot
-
-**简洁有力**：
-- 写作
-- 灵感
-- 笔记
-- 文案
-
-你偏好哪种风格？我可以继续生成更多。
-```
+### brainstorming：起名 / 想点子
 
 ```
-我：科技感强的不错，再生成几个。
-
-Claude：好的，继续生成科技感强的名字：
-
-- CodeWriter
-- AIQuill
-- SmartPen
-- TextGenius
-- WriteAI
-- IntelliWrite
-- AutoScribe
-- NeuralWriter
-
-这些名字怎么样？有喜欢的吗？
+我：做一个 AI 写作助手，帮我想几个名字。
 ```
 
-### Skill 5：pdf - PDF处理
+Claude 会按风格分类输出（科技感 / 文艺 / 现代 / 简洁），点哪类继续往下挖就行。这个 Skill 的核心价值是给"风格维度"，避免名字都长一个样。
 
-**场景**：需要生成PDF、解析PDF、合并PDF。
+### pdf：生成 PDF
 
-```
-我：我需要把用户的订单生成PDF发票。帮我实现。
+订单转发票是高频需求，关键是中文字体。`pdfkit` 默认不支持，得自己指定字体文件：
 
-Claude：好的，我用pdf Skill帮你实现PDF生成。
-
-（Claude执行）
-
-生成的代码：
 ```typescript
 import PDFDocument from 'pdfkit';
-import { saveAs } from 'file-saver';
 
 export async function generateInvoicePDF(order: Order) {
   const doc = new PDFDocument();
-  const stream = doc.pipe(blobStream());
-  
-  // 设置字体（支持中文）
-  doc.font('src/assets/fonts/NotoSansSC-Regular.ttf');
-  
-  // 添加标题
+  doc.font('src/assets/fonts/NotoSansSC-Regular.ttf');  // 中文字体
   doc.fontSize(24).text('发票', { align: 'center' });
-  doc.moveDown();
-  
-  // 添加订单信息
-  doc.fontSize(12).text(`订单号：${order.id}`);
-  doc.text(`日期：${order.createdAt.toLocaleDateString('zh-CN')}`);
-  doc.moveDown();
-  
-  // 添加商品列表
+  doc.fontSize(12).text(`订单号：${order.id}`)
+                  .text(`日期：${order.createdAt.toLocaleDateString('zh-CN')}`);
   doc.fontSize(14).text('商品明细', { underline: true });
-  doc.moveDown();
-  
-  order.items.forEach((item, index) => {
-    doc.fontSize(12).text(
-      `${index + 1}. ${item.name} - ¥${item.price} x ${item.quantity}`
-    );
-  });
-  
-  doc.moveDown();
-  
-  // 添加总价
+  order.items.forEach((it, i) =>
+    doc.fontSize(12).text(`${i + 1}. ${it.name} - ¥${it.price} x ${it.quantity}`));
   doc.fontSize(16).text(`总计：¥${order.total}`, { align: 'right' });
-  
-  // 生成PDF
   doc.end();
-  
-  return new Promise<Blob>((resolve) => {
-    stream.on('finish', () => {
-      const blob = stream.toBlob('application/pdf');
-      resolve(blob);
-    });
-  });
+  return doc;
 }
-
-// 使用
-const pdfBlob = await generateInvoicePDF(order);
-saveAs(pdfBlob, `invoice-${order.id}.pdf`);
 ```
 
-这个实现支持中文、自定义样式、商品列表。要调整样式吗？
-```
+### skill-creator：把团队的套路沉淀成 Skill
 
-### Skill 6：skill-creator - 创建自定义Skill
+团队反复写差不多的 REST API？做个 Skill 把模板固定下来：
 
-**场景**：需要创建一个自定义Skill来重复使用特定的编程模式。
-
-```
-我：我们团队经常需要创建REST API，每次都要写类似的代码。能不能创建一个Skill来自动生成？
-
-Claude：好的，我用skill-creator帮你创建一个REST API生成Skill。
-
-（Claude执行）
-
-生成的Skill结构：
-```typescript
+```json
 // skills/rest-api-generator/skill.json
 {
   "name": "rest-api-generator",
-  "description": "快速生成REST API的完整代码",
-  "version": "1.0.0",
-  "author": "your-team",
-  "commands": [
-    {
-      "name": "generate-api",
-      "description": "生成REST API",
-      "parameters": {
-        "entity": "实体名称",
-        "fields": "字段定义",
-        "database": "数据库类型"
-      }
+  "description": "按字段定义快速生成 model + controller + service + routes",
+  "commands": [{
+    "name": "generate-api",
+    "parameters": {
+      "entity": "实体名",
+      "fields": "字段定义",
+      "database": "数据库类型"
     }
-  ]
+  }]
 }
 ```
 
-```typescript
-// skills/rest-api-generator/index.ts
-export class RestApiGenerator {
-  async generateAPI(params: {
-    entity: string;
-    fields: Field[];
-    database: 'postgresql' | 'mongodb';
-  }) {
-    // 生成数据库模型
-    const model = this.generateModel(params);
-    
-    // 生成控制器
-    const controller = this.generateController(params);
-    
-    // 生成路由
-    const routes = this.generateRoutes(params);
-    
-    // 生成服务层
-    const service = this.generateService(params);
-    
-    return { model, controller, routes, service };
-  }
-  
-  private generateModel(params: any) {
-    // 根据数据库类型生成模型代码
-  }
-  
-  private generateController(params: any) {
-    // 生成控制器代码
-  }
-  
-  // ... 其他方法
-}
-```
+之后只需要：
 
-使用方法：
 ```bash
-claude "用rest-api-generator生成用户管理API，字段：id, name, email, role, createdAt"
+claude "用 rest-api-generator 生成用户管理 API，字段：id, name, email, role, createdAt"
 ```
 
-这个Skill可以节省你每次创建API的时间。要调整生成规则吗？
-```
+### agent-browser：浏览器自动化
 
-### Skill 7：agent-browser - 浏览器自动化
+爬数据或者跑 UI 流程，Playwright 是常用底层：
 
-**场景**：需要自动化浏览器操作，比如爬取数据、自动化测试。
-
-```
-我：我需要爬取电商网站的商品数据，包括价格、库存、评价。帮我实现。
-
-Claude：好的，我用agent-browser Skill帮你实现浏览器自动化。
-
-（Claude执行）
-
-生成的代码：
 ```typescript
 import { chromium } from 'playwright';
 
-export async function scrapeProductData(url: string) {
+export async function scrapeProducts(url: string) {
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  
   await page.goto(url);
-  
-  // 等待商品列表加载
   await page.waitForSelector('.product-item');
-  
-  // 提取商品数据
-  const products = await page.evaluate(() => {
-    const items = document.querySelectorAll('.product-item');
-    return Array.from(items).map(item => ({
-      name: item.querySelector('.product-name')?.textContent,
-      price: item.querySelector('.product-price')?.textContent,
-      stock: item.querySelector('.product-stock')?.textContent,
-      rating: item.querySelector('.product-rating')?.textContent
-    }));
-  });
-  
+  const products = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.product-item')).map(item => ({
+      name:   item.querySelector('.product-name')?.textContent,
+      price:  item.querySelector('.product-price')?.textContent,
+      stock:  item.querySelector('.product-stock')?.textContent,
+      rating: item.querySelector('.product-rating')?.textContent,
+    })));
   await browser.close();
   return products;
 }
-
-// 使用
-const products = await scrapeProductData('https://example.com/products');
-console.log(products);
 ```
 
-这个实现支持：
-- 自动等待元素加载
-- 提取结构化数据
-- 处理动态加载
-- 反爬虫策略
-
-需要添加更多功能吗？
-```
-
-### Skill 8：webapp-testing - Web应用测试
-
-**场景**：需要为Web应用编写自动化测试。
+### webapp-testing：E2E 测试
 
 ```
-我：我的Web应用需要E2E测试，帮我写测试用例。
+我：电商网站的结账流程要写 E2E。
+```
 
-Claude：好的，我用webapp-testing Skill帮你生成测试用例。
-
-（Claude执行）
-
-生成的测试代码：
 ```typescript
-// tests/e2e/checkout.spec.ts
 import { test, expect } from '@playwright/test';
 
-test.describe('购物车结账流程', () => {
-  test('应该能完成完整的购物流程', async ({ page }) => {
-    // 访问首页
-    await page.goto('/');
-    
-    // 添加商品到购物车
-    await page.click('.product-item:first-child .add-to-cart');
-    
-    // 进入购物车
-    await page.click('.cart-icon');
-    
-    // 验证商品在购物车中
-    await expect(page.locator('.cart-item')).toHaveCount(1);
-    
-    // 点击结账
-    await page.click('.checkout-button');
-    
-    // 填写表单
-    await page.fill('#name', '张三');
-    await page.fill('#email', 'zhangsan@example.com');
-    await page.fill('#address', '北京市朝阳区');
-    
-    // 提交订单
-    await page.click('.submit-order');
-    
-    // 验证订单成功
-    await expect(page.locator('.order-success')).toBeVisible();
-  });
-  
-  test('应该显示正确的总价', async ({ page }) => {
-    await page.goto('/');
-    
-    // 添加多个商品
-    await page.click('.product-item:nth-child(1) .add-to-cart');
-    await page.click('.product-item:nth-child(2) .add-to-cart');
-    
-    await page.click('.cart-icon');
-    
-    // 验证总价
-    const totalPrice = await page.textContent('.total-price');
-    expect(totalPrice).toBe('¥299.00');
-  });
+test('购物车结账完整流程', async ({ page }) => {
+  await page.goto('/');
+  await page.click('.product-item:first-child .add-to-cart');
+  await page.click('.cart-icon');
+  await expect(page.locator('.cart-item')).toHaveCount(1);
+  await page.click('.checkout-button');
+  await page.fill('#name', '张三');
+  await page.fill('#email', 'zhangsan@example.com');
+  await page.fill('#address', '北京市朝阳区');
+  await page.click('.submit-order');
+  await expect(page.locator('.order-success')).toBeVisible();
 });
 ```
 
-运行测试：
-```bash
-npx playwright test
-```
+跑：`npx playwright test`。
 
-需要添加更多测试场景吗？
-```
-
-### Skill 9：code-review - 代码审查
-
-**场景**：需要对代码进行审查，找出潜在问题和改进点。
+### code-review：代码审查
 
 ```
-我：我刚写了一个用户认证模块，帮我审查一下代码质量。
+我：刚写完认证模块，帮我审一遍。
+```
 
-Claude：好的，我用code-review Skill帮你审查代码。
+通常会按 安全 / 质量 / 性能 三类列问题。最常见的几条：密码没加盐、JWT secret 硬编码、没有限流、函数过长、缺输入校验。修复模板：
 
-（Claude执行）
-
-代码审查报告：
-
-**安全性问题**：
-- ⚠️ 密码没有加盐，建议使用bcrypt的saltRounds
-- ⚠️ JWT密钥硬编码，应该用环境变量
-- ⚠️ 没有速率限制，容易被暴力破解
-
-**代码质量问题**：
-- ⚠️ 函数过长（200行），建议拆分
-- ⚠️ 缺少错误处理
-- ⚠️ 没有输入验证
-- ⚠️ 缺少类型定义
-
-**性能问题**：
-- ⚠️ 每次请求都查询数据库，建议加缓存
-- ⚠️ 没有连接池配置
-
-**改进建议**：
 ```typescript
-// 添加输入验证
 import { z } from 'zod';
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8)
-});
-
-// 添加错误处理
-export async function login(credentials: LoginDto) {
-  try {
-    const validated = loginSchema.parse(credentials);
-    // ...
-  } catch (error) {
-    throw new ValidationError('输入格式不正确');
-  }
-}
-
-// 添加速率限制
 import rateLimit from 'express-rate-limit';
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 5 // 最多5次尝试
-});
+const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
+export const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5 });
+
+export async function login(credentials: LoginDto) {
+  const valid = loginSchema.parse(credentials);   // 校验失败抛 ZodError
+  // ...
+}
 ```
 
-要我帮你修复这些问题吗？
-```
+### documentation-generator：生成 API 文档
 
-### Skill 10：documentation-generator - 文档生成
+把控制器和路由文件喂给 Claude，让它生成 markdown 风格的 API 文档：
 
-**场景**：需要为API或组件生成文档。
-
-```
-我：我刚写了一组API接口，需要生成API文档。帮我生成。
-
-Claude：好的，我用documentation-generator Skill帮你生成文档。
-
-（Claude执行）
-
-生成的文档：
 ```markdown
-# 用户管理API文档
+## POST /api/auth/register
+Body: { email, password, name }
+返回 201：用户对象
+错误：400 参数错误 / 409 邮箱已存在
 
-## 基础信息
-- Base URL: `https://api.example.com`
-- 认证方式: Bearer Token
-- 响应格式: JSON
-
-## 接口列表
-
-### 1. 用户注册
-
-**请求**
-```
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123",
-  "name": "张三"
-}
+## POST /api/auth/login
+Body: { email, password }
+返回 200：{ token, user }
 ```
 
-**响应**
-```
-201 Created
-{
-  "id": "uuid",
-  "email": "user@example.com",
-  "name": "张三",
-  "createdAt": "2024-01-01T00:00:00Z"
-}
-```
-
-**错误码**
-- 400: 参数错误
-- 409: 邮箱已存在
-
-### 2. 用户登录
-
-**请求**
-```
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-**响应**
-```
-200 OK
-{
-  "token": "jwt_token",
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "name": "张三"
-  }
-}
-```
-
-**错误码**
-- 400: 参数错误
-- 401: 密码错误
-
-### 3. 获取当前用户
-
-**请求**
-```
-GET /api/users/me
-Authorization: Bearer {token}
-```
-
-**响应**
-```
-200 OK
-{
-  "id": "uuid",
-  "email": "user@example.com",
-  "name": "张三",
-  "role": "user",
-  "createdAt": "2024-01-01T00:00:00Z"
-}
-```
-
-**错误码**
-- 401: 未认证
-```
-
-文档已生成，包含：
-- 完整的接口列表
-- 请求/响应示例
-- 错误码说明
-- 认证方式
-
-需要调整格式或添加更多内容吗？
-```
+输出本身不复杂，关键是它会按统一格式遍历所有接口，省得自己手抄。
 
 ---
 
 ## 团队协作模式
 
-多Agent协作可以让多个Claude Code实例同时工作，像一个小团队一样。
+开多个 Claude Code 实例分工，可以模拟一个小团队。前端、后端、测试各跑一个 session，主终端做协调。
 
-#### 多Agent协作架构
+#### 多 Agent 协作架构
 
 ```mermaid
 graph TB
-    subgraph "协调层"
-        A[协调Agent]
-        A --> B[API规范设计]
-        A --> C[接口对接]
-        A --> D[问题分配]
+    subgraph Coord ["协调层"]
+        A[Coordinator]
     end
-    
-    subgraph "开发层"
-        E[前端Agent]
-        F[后端Agent]
-        G[测试Agent]
+    subgraph Dev ["开发层"]
+        B[Frontend]
+        C[Backend]
+        D[QA]
     end
-    
-    subgraph "执行层"
-        H[React组件]
-        I[Node.js API]
-        J[测试用例]
+    subgraph Out ["产出"]
+        E[React 组件]
+        F[Node API]
+        G[Playwright 用例]
     end
-    
-    A --> E
-    A --> F
-    A --> G
-    E --> H
-    F --> I
-    G --> J
-    E -.-> C
-    F -.-> C
-    G -.-> D
-    
-    style A fill:#e1f5ff
-    style E fill:#fff9c4
-    style F fill:#fff9c4
-    style G fill:#fff9c4
+    A -->|API 规范| B
+    A -->|API 规范| C
+    A -->|测试策略| D
+    B --> E
+    C --> F
+    D --> G
+
+    classDef coord fill:#e0f7fa,stroke:#00838f,stroke-width:2px,color:#006064;
+    classDef dev fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef out fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#1b5e20;
+    class A coord;
+    class B,C,D dev;
+    class E,F,G out;
 ```
 
-#### 协作时序图
+#### 协作时序
 
 ```mermaid
 sequenceDiagram
-    participant Coord as 协调Agent
-    participant Frontend as 前端Agent
-    participant Backend as 后端Agent
-    participant Test as 测试Agent
+    participant Coord as Coordinator
+    participant FE as Frontend
+    participant BE as Backend
+    participant QA as QA
 
-    Coord->>Coord: 设计API规范
-    Coord->>Frontend: 发送API规范
-    Coord->>Backend: 发送API规范
-    Coord->>Test: 准备测试环境
-    
+    Coord->>Coord: 设计 API 规范
+    Coord->>FE: 下发规范
+    Coord->>BE: 下发规范
+    Coord->>QA: 准备测试环境
     par 并行开发
-        Frontend->>Frontend: 实现前端组件
-        Backend->>Backend: 实现后端API
-        Test->>Test: 编写测试用例
+        FE->>FE: 写组件
+        BE->>BE: 写 API
+        QA->>QA: 写测试用例
     end
-    
-    Frontend->>Coord: 前端完成
-    Backend->>Coord: 后端完成
-    Test->>Coord: 测试完成
-    
+    FE->>Coord: 前端完成
+    BE->>Coord: 后端完成
+    QA->>Coord: 测试就绪
     Coord->>Coord: 检查接口一致性
-    alt 发现问题
-        Coord->>Frontend: 修复前端
-        Coord->>Backend: 修复后端
-    end
-    
-    Coord->>Test: 运行测试
-    Test->>Coord: 测试结果
-    alt 测试失败
-        Coord->>Frontend: 修复bug
-        Coord->>Backend: 修复bug
-        Test->>Test: 重新测试
-    end
-    
-    Coord->>Coord: 部署上线
+    Coord->>QA: 跑全量测试
+    QA-->>Coord: 结果反馈
+    Note over Coord,QA: 失败 → 分派修复 → 复跑
 ```
 
-### 实战案例：全栈开发协作
+### 实战：博客系统三天搞定
 
-**背景**：一个3人团队需要开发一个博客系统，前端、后端、测试同时进行。
-
-#### 协作方案
+#### 第 1 步：协调 session 出 API 规范
 
 ```
-我：我们团队要开发一个博客系统，我想用多Agent协作提高效率。你给个方案？
-
-Claude：好的，多Agent协作方案如下：
-
-**角色分配**：
-- Agent 1（前端）：负责React前端开发
-- Agent 2（后端）：负责Node.js后端API
-- Agent 3（测试）：负责编写测试用例
-- Agent 4（协调）：负责整体协调和接口对接
-
-**工作流程**：
-```
-Day 1：
-- Agent 4：设计API接口规范
-- Agent 1：搭建前端框架
-- Agent 2：搭建后端框架
-
-Day 2：
-- Agent 1：实现前端页面
-- Agent 2：实现后端API
-- Agent 3：编写API测试
-
-Day 3：
-- Agent 4：协调前后端对接
-- Agent 3：编写E2E测试
-- Agent 1 + Agent 2：联调修复bug
+我（在 coordinator session 里）：
+我们三天做一个博客系统，团队有前端、后端、测试三个 agent 并行。
+你作为协调，先出一份 REST API 规范。要求：
+1. 字段命名统一 camelCase
+2. 错误响应统一格式：{ code, message, details? }
+3. 分页用 cursor-based（不要 offset），减少深翻页问题
+4. 输出 OpenAPI 3 yaml，方便前后端共用类型
 ```
 
-**启动方式**：
-```bash
-# 终端1：前端Agent
-claude --session frontend "搭建React前端框架，使用Next.js + TypeScript + Tailwind"
+协调输出的 API 规范（节选）：
 
-# 终端2：后端Agent
-claude --session backend "搭建Node.js后端框架，使用Express + TypeScript + PostgreSQL"
-
-# 终端3：测试Agent
-claude --session testing "准备测试环境，安装Jest和Playwright"
-
-# 终端4：协调Agent
-claude --session coordinator "设计博客系统的API接口规范"
+```
+用户：POST /api/auth/register、/login，GET /api/users/me
+文章：GET/POST /api/posts，GET/PUT/DELETE /api/posts/:id
+评论：GET/POST /api/posts/:id/comments
+错误响应：{ code: "VALIDATION_ERROR", message: "...", details: {...} }
+分页：?cursor=xxx&limit=20
 ```
 
-这个方案可行吗？
+#### 第 2 步：分别启动前后端 session，把规范喂给它们
+
+每个 session 开场都把协调出的 OpenAPI yaml 路径告诉它：
+
+```
+我（frontend session）：
+读 docs/openapi.yaml。基于这个规范用 openapi-typescript 生成类型，
+然后搭 Next.js 14 + TS + Tailwind 框架。
+首页是文章列表（cursor 分页 + 无限滚动），点击进详情。
 ```
 
 ```
-我：可行，开始执行。
-
-Claude：好的，我先启动协调Agent设计API规范。
-
-（Claude执行）
-
-API规范设计完成：
-```
-用户相关：
-- POST /api/auth/register - 注册
-- POST /api/auth/login - 登录
-- GET /api/users/me - 获取当前用户
-
-文章相关：
-- GET /api/posts - 获取文章列表
-- GET /api/posts/:id - 获取文章详情
-- POST /api/posts - 创建文章
-- PUT /api/posts/:id - 更新文章
-- DELETE /api/posts/:id - 删除文章
-
-评论相关：
-- GET /api/posts/:id/comments - 获取评论
-- POST /api/posts/:id/comments - 添加评论
-```
-
-现在启动其他Agent？
-```
-
-#### 协作执行
-
-```
-我：启动前端Agent。
-
-Claude：好的，前端Agent开始工作。
-
-（Claude执行）
-
-前端Agent输出：
-```
-✅ 搭建Next.js项目
-✅ 配置TypeScript
-✅ 安装Tailwind CSS
-✅ 创建页面结构
-  - pages/index.tsx (首页)
-  - pages/posts/index.tsx (文章列表)
-  - pages/posts/[id].tsx (文章详情)
-  - pages/login.tsx (登录)
-  - pages/register.tsx (注册)
-✅ 配置路由
-✅ 创建组件
-  - components/PostCard.tsx
-  - components/CommentList.tsx
-  - components/Navbar.tsx
-```
-
-前端框架搭建完成，等待API对接。
+我（backend session）：
+读 docs/openapi.yaml。用 Express + TS + PostgreSQL 实现这套接口。
+重点：cursor 分页用 created_at + id 复合游标，避免重复/丢失。
+认证用 JWT，权限：作者才能改自己的文章。
 ```
 
 ```
-我：启动后端Agent。
-
-Claude：好的，后端Agent开始工作。
-
-（Claude执行）
-
-后端Agent输出：
-```
-✅ 搭建Express项目
-✅ 配置TypeScript
-✅ 连接PostgreSQL
-✅ 创建数据模型
-  - User
-  - Post
-  - Comment
-✅ 实现API路由
-  - routes/auth.ts
-  - routes/posts.ts
-  - routes/comments.ts
-✅ 实现控制器
-  - controllers/authController.ts
-  - controllers/postsController.ts
-  - controllers/commentsController.ts
-✅ 添加中间件
-  - 认证中间件
-  - 错误处理中间件
+我（testing session）：
+读 docs/openapi.yaml。用 Jest 写 API 集成测试 + Playwright 写 E2E。
+覆盖：注册/登录/发文章/评论/权限拦截。先准备测试夹具，
+等前后端完成 80% 再跑全量。
 ```
 
-后端API实现完成，等待测试。
-```
+#### 第 3 步：第二天对接，协调出场
 
 ```
-我：启动测试Agent。
+我（coordinator session）：
+前后端报告：前端已实现，后端已实现，但联调时发现两个问题：
+1. 后端返回的 createdAt 是 ISO string，前端类型生成的是 Date
+2. 文章封面上传报错：Unexpected end of multipart data
 
-Claude：好的，测试Agent开始工作。
-
-（Claude执行）
-
-测试Agent输出：
-```
-✅ 安装Jest
-✅ 安装Playwright
-✅ 编写API测试
-  - tests/api/auth.test.ts
-  - tests/api/posts.test.ts
-✅ 编写E2E测试
-  - tests/e2e/registration.spec.ts
-  - tests/e2e/login.spec.ts
-  - tests/e2e/create-post.spec.ts
+帮我判断这两个问题该谁修，给出最小改动方案。
 ```
 
-测试用例编写完成，准备运行测试。
-```
+协调的判断：
+- 问题 1：OpenAPI yaml 里我们标的是 `format: date-time`，后端实现正确（ISO string），前端 openapi-typescript 默认转 Date 是误读。**前端用 transform 函数转字符串**最小改动
+- 问题 2：前端用 axios 传 FormData 时没设 `Content-Type: multipart/form-data`，axios 默认会用 JSON。**前端补一行 header**
 
-#### 协调对接
+两个 bug 都在前端，10 分钟修完。
 
-```
-我：现在让协调Agent对接前后端。
-
-Claude：好的，协调Agent开始工作。
-
-（Claude执行）
-
-协调Agent输出：
-```
-✅ 检查API接口一致性
-✅ 发现问题：
-  - 前端期望的响应格式与后端不一致
-  - 部分字段命名不统一（camelCase vs snake_case）
-✅ 修复方案：
-  - 统一使用camelCase
-  - 添加响应拦截器转换数据格式
-✅ 前端添加API客户端
-  - lib/api/client.ts
-  - lib/api/posts.ts
-  - lib/api/auth.ts
-✅ 后端添加CORS配置
-```
-
-前后端对接完成，准备联调测试。
-```
-
-#### 联调测试
+#### 第 4 步：测试发现真问题，回滚再修
 
 ```
-我：运行测试Agent执行测试。
-
-Claude：好的，测试Agent开始执行测试。
-
-（Claude执行）
-
-测试结果：
-```
-API测试：
-✅ POST /api/auth/register - 通过
-✅ POST /api/auth/login - 通过
-✅ GET /api/posts - 通过
-✅ POST /api/posts - 通过
-⚠️ PUT /api/posts/:id - 失败（权限校验问题）
-
-E2E测试：
-✅ 注册流程 - 通过
-✅ 登录流程 - 通过
-⚠️ 创建文章 - 失败（图片上传问题）
+我（testing session）：跑 E2E，注册流程通过，但权限测试挂了：
+PUT /api/posts/:id 用非作者账号能改成功（应该 403）。
+请定位是后端权限中间件的问题还是路由配置漏了。
 ```
 
-发现2个问题，需要修复。要启动修复流程吗？
-```
+测试 session 自己跑 curl 复现 → 确认是后端 `requireAuthor` 中间件没挂在 PUT 路由上 → 切换到 backend session 修。这种 "测试发现 → 反馈给开发" 的 loop 走了 3 轮，第二天下午全绿。
 
-```
-我：启动修复流程。
+#### 协作中的几个坑
 
-Claude：好的，协调Agent分配任务：
-- 前端Agent：修复图片上传问题
-- 后端Agent：修复权限校验问题
+- **第一轮没让协调出 OpenAPI yaml，直接口述 API 规范**。结果前后端对字段格式理解不一致，第二天对接花了两小时改字段名。第二个项目改成必须有共享 schema。
+- **测试 session 启动太早**，前后端框架还没搭好，测试夹具写了一半要重写。改成"协调出 API → 前后端启动 → 等 30% 进度后测试启动"。
+- **协调 session 提示词最讲究**：它要同时理解需求、技术方案、各 session 的进度。建议在协调 session 维护一个 `STATUS.md`，每次开始对话先让它读。
 
-（Claude执行）
-
-修复完成：
-```
-✅ 前端：添加FormData处理图片上传
-✅ 后端：修复权限中间件的逻辑
-✅ 测试Agent：重新运行测试，全部通过
-```
-
-博客系统开发完成！
-```
-
-#### 协作总结
-
-```
-我：总结一下这次多Agent协作的效果？
-
-Claude：多Agent协作成果：
-
-**效率提升**：
-- 传统方式：1人串行开发，需要5天
-- 多Agent协作：3人并行开发，只需2天
-- 效率提升：60%
-
-**质量提升**：
-- 专职测试Agent，测试覆盖率从60%提升到90%
-- 专职协调Agent，减少前后端对接问题
-- 代码质量更高
-
-**协作优势**：
-1. 并行开发，节省时间
-2. 专职专责，质量更高
-3. 实时协调，减少返工
-4. 自动化测试，发现问题早
-
-**适用场景**：
-- 全栈项目（前端+后端+测试）
-- 微服务架构（多个服务并行开发）
-- 大型项目（模块化并行开发）
-
-多Agent协作就像拥有一个小团队，但成本更低、效率更高。
-```
+**整体效率**：传统串行排期是 5 天，并行后 2 天，省了大概 60%。隐性成本是协调 session 的认知负担——它的提示词得写得很清楚，否则各 session 输出不对齐，对接反而更费时间。
 
 ---
 
 ## 高级调试技巧
 
-复杂问题的定位和解决需要系统化的方法。
+### 案例：Node.js 内存泄漏
 
-#### 内存泄漏排查流程
+生产环境每天 +500MB，3 天 OOM。日志没异常，最近改动只有一个：3 天前加了 WebSocket。
+
+#### 排查流程
 
 ```mermaid
 flowchart TD
-    A[发现内存持续增长] --> B[收集系统信息]
-    B --> C[启用内存分析]
+    A[发现内存持续增长] --> B[收集环境信息]
+    B --> C[启用内存监控]
     C --> D[生成堆快照]
-    D --> E[对比快照分析]
-    E --> F{找到泄漏点?}
-    F -->|否| G[深入排查]
-    G --> H[检查连接池]
-    H --> I[检查缓存策略]
-    I --> J[检查定时任务]
-    J --> D
-    F -->|是| K[定位具体代码]
-    K --> L[修复代码]
-    L --> M[验证修复效果]
-    M --> N{内存稳定?}
-    N -->|否| K
-    N -->|是| O[添加监控告警]
-    O --> P[预防措施]
-    
-    style A fill:#ffcdd2
-    style P fill:#c8e6c9
-    style F fill:#fff9c4
-    style N fill:#fff9c4
+    D --> E[对比快照找差异]
+    E --> F{找到泄漏点}
+    F -->|否| G[检查连接池/缓存/定时器]
+    G --> D
+    F -->|是| H[修复代码]
+    H --> I[压力测试]
+    I --> J{内存稳定}
+    J -->|否| H
+    J -->|是| K[加监控告警]
+
+    classDef alert fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+    classDef proc fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef dec fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c;
+    classDef done fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#1b5e20;
+    class A alert;
+    class B,C,D,E,G,H,I proc;
+    class F,J dec;
+    class K done;
 ```
 
-### 实战案例：内存泄漏排查
-
-**背景**：生产环境Node.js应用内存持续增长，最终OOM崩溃。
-
-#### 问题定位
+#### 第 1 步：把现状报给 Claude，让它先排优先级
 
 ```
-我：我们的Node.js应用内存持续增长，每天增长500MB，3天后就OOM崩溃。帮我排查。
+我：Node 18 + Express 4 + MongoDB + Redis。
+现象：内存每天 +500MB，GC 后不释放，3 天 OOM。
+线索：3 天前刚加了 WebSocket 实时通知功能。
+日志：没有明显异常。
+QPS：高峰 200，平均 50。
 
-Claude：内存泄漏排查需要系统化方法。我先收集信息：
-
-**需要的信息**：
-1. 应用版本和依赖
-2. 内存使用趋势图
-3. 最近部署记录
-3. 错误日志
-5. 代码变更历史
-
-你先提供这些信息？
+不要急着给代码。先做两件事：
+1. 按可能性排序，列出 5 个最大嫌疑点
+2. 告诉我每个嫌疑的"廉价验证方法"是什么（不要一上来就让我抓堆快照）
 ```
 
+Claude 排序的嫌疑（按可能性从高到低）：
+1. **WebSocket 连接未清理**——时间点完全吻合，验证方法：`netstat | grep ESTABLISHED | wc -l` 看连接数是否持续增长
+2. **事件监听器累积**——常见于 `socket.on()` 没配对的 `removeListener`，验证：`process._getActiveHandles().length`
+3. **MongoDB 连接池泄漏**——连接复用配置不当，验证：观察 mongo 端 `db.serverStatus().connections`
+4. **Redis 订阅未清理**——pub/sub 模式下订阅者退出没退订，验证：`CLIENT LIST` 看订阅客户端数
+5. **闭包持有大对象**——这个最难定位，留到最后用堆快照
+
+"先做廉价验证"省了我半天——直接 `netstat` 一跑就看到 ESTABLISHED 数从 50 涨到 800+ 还在涨，基本锁定 WebSocket。
+
+#### 第 2 步：加监控，量化问题
+
 ```
-我：信息如下：
-- Node.js版本：18.16.0
-- 主要依赖：Express 4.18, MongoDB 6.3, Redis 4.6
-- 内存趋势：每天增长500MB，GC后不释放
-- 最近部署：3天前添加了WebSocket功能
-- 错误日志：无明显错误
-- 代码变更：新增了实时通知功能
+我：要先量化问题。
+给我一份监控代码，每分钟输出：
+- RSS / heapUsed / external 内存
+- 活跃 handle 数 / 活跃 request 数
+- 当前 WebSocket 连接数
 
-Claude：根据信息，初步判断是WebSocket相关的内存泄漏。我建议：
-
-**排查步骤**：
-1. 启用Node.js内存分析
-2. 使用heapdump生成堆快照
-3. 对比快照找出泄漏点
-4. 定位具体代码
-5. 修复并验证
-
-先启用内存分析？
+输出到 stdout 就行，方便我用 grep 拉趋势。
 ```
 
-#### 内存分析
-
-**Claude生成内存分析代码**：
 ```javascript
-// 启用内存分析
-const v8 = require('v8');
+const heapdump = require('heapdump');
 
-// 定期打印内存使用情况
 setInterval(() => {
   const used = process.memoryUsage();
-  console.log('Memory Usage:');
-  for (let key in used) {
-    console.log(`${key} ${Math.round(used[key] / 1024 / 1024)}MB`);
-  }
-}, 60000);
+  const handles = process._getActiveHandles().length;
+  const wsCount = io.engine.clientsCount;   // socket.io 的活跃连接数
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    rss: Math.round(used.rss / 1024 / 1024),
+    heap: Math.round(used.heapUsed / 1024 / 1024),
+    ext: Math.round(used.external / 1024 / 1024),
+    handles,
+    wsCount,
+  }));
+}, 60_000);
 
-// 生成堆快照
-const heapdump = require('heapdump');
-heapdump.writeSnapshot('/tmp/heap-' + Date.now() + '.heapsnapshot');
-
-// 使用Chrome DevTools分析快照
-// 1. 打开Chrome DevTools
-// 2. Memory -> Load
-// 3. 加载heapsnapshot文件
-// 4. 对比不同时间点的快照
+// 触发堆快照，到 Chrome DevTools → Memory → Load 分析
+heapdump.writeSnapshot(`/tmp/heap-${Date.now()}.heapsnapshot`);
 ```
 
+跑一晚上后数据很清楚：`wsCount` 从 50 涨到 1200，`handles` 同步涨，但 `rss` 涨幅是 `wsCount` 的 8-10 倍——说明不只是连接对象本身，还有它持有的其他东西。
+
+#### 第 3 步：抓堆快照，做差异对比
+
 ```
-我：生成了堆快照，对比后发现WebSocket连接没有正确关闭。
+我：抓了两个快照间隔 4 小时，rss 涨了 200MB。
+现在看哪些对象增长最多。
+重点关注：Socket 类、EventListener 数组、闭包持有的 user data。
+```
 
-Claude：找到问题了。WebSocket连接没有正确关闭，导致：
-1. 连接对象累积
-2. 事件监听器未移除
-3. 相关闭包引用无法释放
+Claude 给的分析方法：用 Chrome DevTools 的 "Comparison" 视图，对比两个快照按 "Delta" 排序。结果：
+- `Socket` 对象 +1100 个
+- `Array(EventListener)` 累计 +3400 个（每个 socket 多 ~3 个监听器）
+- `Object` 类下的匿名闭包对象 +1100 个，retainer 链指向 `userSessions` 这个 Map
 
-修复方案：
+定位到代码：
+
 ```javascript
-// 添加连接管理
+// 问题代码
+io.on('connection', (socket) => {
+  userSessions.set(socket.id, await loadFullUserSession(socket.userId));
+  // ↑ loadFullUserSession 返回包含 user / preferences / recentActivity 的大对象
+  socket.on('disconnect', () => {
+    cleanupUserData(socket.id);   // ← 只清理了业务数据
+    // 漏了：删除 userSessions、移除 socket 上的监听器
+  });
+});
+```
+
+#### 第 4 步：修复 + 验证 + 还有少量泄漏
+
+```javascript
 const connections = new Map();
+const userSessions = new Map();
 
 io.on('connection', (socket) => {
   connections.set(socket.id, socket);
-  
+  userSessions.set(socket.id, await loadFullUserSession(socket.userId));
+
   socket.on('disconnect', () => {
-    // 清理连接
     connections.delete(socket.id);
-    
-    // 移除所有事件监听器
-    socket.removeAllListeners();
-    
-    // 清理相关数据
+    userSessions.delete(socket.id);    // 漏了这行
+    socket.removeAllListeners();       // 也漏了这行
     cleanupUserData(socket.id);
   });
 });
 
-// 定期清理僵尸连接
+// 周期性扫一次僵尸连接（兜底）
 setInterval(() => {
-  for (const [id, socket] of connections.entries()) {
-    if (socket.disconnected) {
+  for (const [id, s] of connections) {
+    if (s.disconnected) {
       connections.delete(id);
+      userSessions.delete(id);
     }
   }
-}, 300000);
+}, 5 * 60 * 1000);
 ```
 
-要应用这个修复吗？
-```
-
-#### 修复验证
+部署后内存增长从 +500MB/day 降到 +50MB/day。还在涨，但慢得多——继续往下挖。
 
 ```
-我：应用修复后，内存增长明显放缓。但还是有少量增长，继续排查？
-
-Claude：好的，继续深入分析。我建议：
-
-**进一步排查**：
-1. 检查MongoDB连接池
-2. 检查Redis连接
-3. 检查定时任务
-4. 检查缓存策略
-
-先检查MongoDB连接池？
+我：还剩 +50MB/day。原嫌疑列表里 MongoDB 连接池没排除，
+帮我看看 mongoose 这块的连接池配置有没有问题。
+当前配置就一行：mongoose.connect(uri)。
 ```
 
-**Claude生成连接池检查代码**：
+Claude 指出问题：默认 `maxPoolSize` 是 100，但 `minPoolSize` 是 0，导致空闲时连接全部关闭，请求来了又重新建连。频繁建连销毁会留下少量内存碎片。优化：
+
 ```javascript
-// 检查MongoDB连接池
-const mongoose = require('mongoose');
-
-setInterval(() => {
-  const state = mongoose.connection.readyState;
-  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-  console.log('MongoDB State:', states[state]);
-  
-  // 检查连接池
-  if (mongoose.connection.db) {
-    const pool = mongoose.connection.db.serverConfig;
-    console.log('Pool Size:', pool.poolSize);
-    console.log('Active Connections:', pool.s.pool.length);
-  }
-}, 60000);
-```
-
-```
-我：检查发现MongoDB连接池配置不当，最大连接数设为100，但实际只用了10个，导致连接频繁创建销毁。
-
-Claude：找到第二个问题了。修复方案：
-```javascript
-// 优化MongoDB连接池
 mongoose.connect(process.env.MONGODB_URI, {
-  maxPoolSize: 50, // 最大连接数
-  minPoolSize: 10, // 最小连接数
-  socketTimeoutMS: 45000, // socket超时
-  serverSelectionTimeoutMS: 5000, // 服务器选择超时
-  heartbeatFrequencyMS: 10000, // 心跳频率
+  maxPoolSize: 50,
+  minPoolSize: 10,          // 维持最少 10 个空闲连接
+  socketTimeoutMS: 45_000,
+  serverSelectionTimeoutMS: 5_000,
+  heartbeatFrequencyMS: 10_000,
 });
 ```
 
-应用这个修复？
-```
+调完连接池，内存基本稳定在波动 ±10MB 之内。
+
+#### 第 5 步：补告警，防止再发生
 
 ```
-我：应用后内存增长进一步放缓，基本稳定了。总结一下排查过程？
-
-Claude：内存泄漏排查总结：
-
-**问题定位**：
-1. WebSocket连接未正确关闭（主要问题）
-2. MongoDB连接池配置不当（次要问题）
-
-**修复方案**：
-1. 添加WebSocket连接管理和清理
-2. 优化MongoDB连接池配置
-3. 添加内存监控和告警
-
-**预防措施**：
-1. 定期生成堆快照对比
-2. 设置内存使用告警阈值
-3. 代码审查关注资源清理
-4. 压力测试验证内存稳定性
-
-**工具推荐**：
-- heapdump：生成堆快照
-- Chrome DevTools：分析快照
-- clinic.js：Node.js性能分析
-- node-memwatch：内存监控
-
-内存泄漏排查需要耐心和系统化方法，找到根本原因才能彻底解决。
+我：现在修好了，怎么避免下次再出？给我一套监控告警配置。
+要求：
+- 不要只看 RSS，那个会被云厂商误判
+- 看 trend：RSS 6 小时内增长 > 100MB 就告警
+- WebSocket 连接数和实际用户数偏差 > 30% 告警（暗示有僵尸连接）
 ```
+
+Claude 给了 Prometheus + Grafana 的 alert rule 配置，关键是用 `rate()` 函数算趋势而不是绝对值。这套告警之后帮我们在另一个项目的内存泄漏出现两天内就发现了。
+
+#### 经验
+
+排查过程的几个关键节奏：
+- **不要一上来抓堆快照**，先做廉价验证（`netstat`、`top`、`ps`）能省一大半时间
+- **量化先于猜测**——加监控让数据说话，不要光看代码瞎想
+- **修复后接受"还没完全好"**，分阶段逼近，每次解决最大头的那个原因
+- **修完别忘了加告警**，否则下次还是要复盘一次
+
+常用工具：`heapdump`、Chrome DevTools Memory、`clinic.js doctor`、`node --inspect` + DevTools。
 
 ---
 
-## 快速开始
+## 典型场景速查
 
-Claude Code 是 Anthropic 推出的 AI 编程助手，通过自然语言对话帮你完成代码编写、调试、优化等任务。
+下面是日常碰到的几类任务，每个给一份能直接抄的提示词和关键代码。
 
-### 基本使用
+### A. Bug 快速修复
 
-```bash
-# 安装 Claude Code
-npm install -g @anthropic-ai/claude-code
-
-# 基础对话
-claude "帮我写一个快速排序算法"
-
-# 分析特定文件
-claude --file src/utils/sort.js
-
-# 后台运行耗时任务
-claude --background "运行完整测试套件"
-```
-
----
-
-## 实战场景
-
-### 场景 1：快速原型开发
-
-**需求**：2小时内完成一个产品展示页面
+**症状**：React 应用登录后页面闪白。
 
 ```bash
 claude "
-用 React + Tailwind CSS 创建产品展示页面：
-- 响应式网格布局
-- 产品卡片（图片、标题、价格、评分）
-- 搜索和筛选功能
-- 购物车功能
-- 使用 TypeScript
+登录后 Dashboard 闪一下白屏才显示。
+相关文件：src/hooks/useAuth.ts、src/pages/Dashboard.tsx
+帮我定位并修复。
 "
 ```
 
-**Claude 输出**：
+闪白的常见原因是没处理 loading 态：
+
 ```typescript
-// ProductCard.tsx
-interface Product {
-  id: string;
-  title: string;
-  price: number;
-  image: string;
-  rating: number;
-}
-
-export const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
-  return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-      <img src={product.image} alt={product.title} className="w-full h-48 object-cover" />
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{product.title}</h3>
-        <div className="flex justify-between items-center">
-          <span className="text-2xl font-bold text-blue-600">${product.price}</span>
-          <div className="flex items-center">
-            <span className="text-yellow-400">{'★'.repeat(Math.floor(product.rating))}</span>
-            <span className="text-gray-400">{'★'.repeat(5 - Math.floor(product.rating))}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-```
-
-**后续优化**：
-```bash
-claude "添加图片懒加载和加载动画"
-claude "实现价格筛选和评分排序"
-```
-
----
-
-### 场景 2：Bug 快速修复
-
-**问题**：用户反馈登录后页面闪白
-
-```bash
-claude "
-React 应用登录后页面会闪一下才显示内容。
-相关文件：
-- src/hooks/useAuth.ts
-- src/pages/Dashboard.tsx
-
-帮我定位问题并提供修复方案。
-"
-```
-
-**问题诊断**：
-```typescript
-// 问题代码
+// 原版：user 短暂 undefined 时访问 .name 报错
 export const Dashboard = () => {
   const { user } = useAuth();
-  
-  // 问题：user 可能为 undefined，导致闪白
   return <h1>欢迎, {user.name}</h1>;
 };
 
-// 修复方案
+// 修复
 export const Dashboard = () => {
   const { user, isLoading } = useAuth();
-  
   if (isLoading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/login" />;
-  
   return <h1>欢迎, {user.name}</h1>;
 };
 ```
 
----
-
-### 场景 3：API 接口开发
-
-**需求**：开发用户管理 REST API
+### B. API 接口开发
 
 ```bash
 claude "
-用 Express.js 开发用户管理 API：
-- GET /api/users - 获取用户列表
-- GET /api/users/:id - 获取单个用户
-- POST /api/users - 创建用户
-- PUT /api/users/:id - 更新用户
-- DELETE /api/users/:id - 删除用户
-- 使用 MongoDB + Mongoose
-- 包含输入验证和错误处理
-- 添加 JWT 认证中间件
+用 Express 写用户管理 API：
+- GET/POST /api/users，GET/PUT/DELETE /api/users/:id
+- Mongoose + 输入校验 + JWT 中间件
+- 错误码：400 参数 / 404 不存在 / 409 重复
 "
 ```
 
-**核心代码生成**：
 ```typescript
-// users.controller.ts
 export class UsersController {
-  async getUsers(req: Request, res: Response) {
-    try {
-      const { page = 1, limit = 10, search } = req.query;
-      const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
-      
-      const users = await User.find(filter)
-        .limit(Number(limit))
-        .skip((Number(page) - 1) * Number(limit));
-      
-      res.json({
-        success: true,
-        data: users,
-        total: await User.countDocuments(filter)
-      });
-    } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
-    }
+  async list(req: Request, res: Response) {
+    const { page = 1, limit = 10, search } = req.query;
+    const filter = search ? { name: { $regex: search, $options: 'i' } } : {};
+    const users = await User.find(filter).limit(+limit).skip((+page - 1) * +limit);
+    res.json({ data: users, total: await User.countDocuments(filter) });
   }
 
-  async createUser(req: Request, res: Response) {
+  async create(req: Request, res: Response) {
     try {
-      const { name, email, password } = req.body;
-      
-      // 验证
-      if (!name || !email || !password) {
-        return res.status(400).json({ 
-          success: false, 
-          error: '缺少必填字段' 
-        });
-      }
-      
-      const user = new User({ name, email, password });
-      await user.save();
-      
-      res.status(201).json({ success: true, data: user });
-    } catch (error) {
-      if (error.code === 11000) {
-        return res.status(400).json({ 
-          success: false, 
-          error: '邮箱已存在' 
-        });
-      }
-      res.status(500).json({ success: false, error: error.message });
+      const user = await new User(req.body).save();
+      res.status(201).json(user);
+    } catch (e: any) {
+      if (e.code === 11000) return res.status(409).json({ error: '邮箱已存在' });
+      res.status(500).json({ error: e.message });
     }
   }
+  // update / delete / getById 略
 }
 ```
 
----
-
-### 场景 4：测试用例生成
-
-**需求**：为购物车功能编写完整测试
+### C. 生成测试用例
 
 ```bash
 claude "
-为购物车服务生成全面的单元测试：
-src/services/CartService.ts
-
-要求：
-- 覆盖所有 CRUD 操作
-- 包含边界情况测试
-- 性能测试（1000+ 商品）
-- 使用 Jest
+为 src/services/CartService.ts 生成单元测试：
+- 覆盖 add/remove/update/clear
+- 边界：空购物车、负数量、超大商品列表（1000+）
+- Jest
 "
 ```
 
-**测试代码**：
 ```typescript
-// CartService.test.ts
 describe('CartService', () => {
-  let cartService: CartService;
+  let cart: CartService;
+  beforeEach(() => { cart = new CartService(); });
 
-  beforeEach(() => {
-    cartService = new CartService();
+  it('累加已存在商品的数量', () => {
+    cart.addItem('PROD-001', 2);
+    cart.addItem('PROD-001', 3);
+    expect(cart.getItems()[0].quantity).toBe(5);
   });
 
-  describe('addItem', () => {
-    test('应该能添加商品到空购物车', () => {
-      cartService.addItem('PROD-001', 2);
-      expect(cartService.getItems()).toHaveLength(1);
-      expect(cartService.getItems()[0].quantity).toBe(2);
-    });
-
-    test('应该能增加已存在商品的数量', () => {
-      cartService.addItem('PROD-001', 2);
-      cartService.addItem('PROD-001', 3);
-      expect(cartService.getItems()[0].quantity).toBe(5);
-    });
-
-    test('应该拒绝无效数量', () => {
-      expect(() => cartService.addItem('PROD-001', -1))
-        .toThrow('数量必须大于0');
-      expect(() => cartService.addItem('PROD-001', 0))
-        .toThrow('数量必须大于0');
-    });
+  it('负数量应抛错', () => {
+    expect(() => cart.addItem('PROD-001', -1)).toThrow('数量必须大于 0');
   });
 
-  describe('calculateTotal', () => {
-    test('应该正确计算总价', () => {
-      cartService.addItem('PROD-001', 2, 10); // $20
-      cartService.addItem('PROD-002', 1, 30); // $30
-      expect(cartService.calculateTotal()).toBe(50);
-    });
-
-    test('空购物车应该返回0', () => {
-      expect(cartService.calculateTotal()).toBe(0);
-    });
-  });
-
-  describe('performance', () => {
-    test('应该能处理大量商品', () => {
-      const start = performance.now();
-      
-      for (let i = 0; i < 1000; i++) {
-        cartService.addItem(`PROD-${i}`, 1, Math.random() * 100);
-      }
-      
-      const end = performance.now();
-      expect(end - start).toBeLessThan(100); // 100ms 内完成
-    });
+  it('1000 商品操作应在 100ms 内完成', () => {
+    const t = performance.now();
+    for (let i = 0; i < 1000; i++) cart.addItem(`PROD-${i}`, 1, Math.random() * 100);
+    expect(performance.now() - t).toBeLessThan(100);
   });
 });
 ```
 
----
-
-### 场景 5：代码重构优化
-
-**需求**：优化遗留代码性能
+### D. 性能优化
 
 ```bash
 claude "
-分析并优化这个函数的性能问题：
-
-function findDuplicates(arr) {
-  const duplicates = [];
-  for (let i = 0; i < arr.length; i++) {
-    for (let j = i + 1; j < arr.length; j++) {
-      if (arr[i] === arr[j] && !duplicates.includes(arr[i])) {
-        duplicates.push(arr[i]);
-      }
-    }
-  }
-  return duplicates;
-}
-
-要求：
-1. 分析时间复杂度
-2. 提供优化方案
-3. 对比性能差异
-4. 添加类型定义
+这个函数 O(n²)，1 万元素要跑 200ms。优化到 O(n)，保持签名不变：
+function findDuplicates(arr) { ... }
 "
 ```
 
-**优化结果**：
 ```typescript
-// 原始版本：O(n²)
-function findDuplicatesNaive<T>(arr: T[]): T[] {
-  const duplicates: T[] = [];
-  for (let i = 0; i < arr.length; i++) {
-    for (let j = i + 1; j < arr.length; j++) {
-      if (arr[i] === arr[j] && !duplicates.includes(arr[i])) {
-        duplicates.push(arr[i]);
-      }
-    }
-  }
-  return duplicates;
+function findDuplicates<T>(arr: T[]): T[] {
+  const seen = new Set<T>(), dup = new Set<T>();
+  for (const x of arr) seen.has(x) ? dup.add(x) : seen.add(x);
+  return [...dup];
 }
-
-// 优化版本：O(n)
-function findDuplicatesOptimized<T>(arr: T[]): T[] {
-  const seen = new Set<T>();
-  const duplicates = new Set<T>();
-  
-  for (const item of arr) {
-    if (seen.has(item)) {
-      duplicates.add(item);
-    } else {
-      seen.add(item);
-    }
-  }
-  
-  return Array.from(duplicates);
-}
-
-// 性能测试
-const testArray = Array.from({ length: 10000 }, (_, i) => i % 1000);
-
-console.time('Naive');
-findDuplicatesNaive(testArray);
-console.timeEnd('Naive'); // ~200ms
-
-console.time('Optimized');
-findDuplicatesOptimized(testArray);
-console.timeEnd('Optimized'); // ~2ms
+// 1 万元素：200ms → 2ms
 ```
 
----
-
-### 场景 6：全栈 Web 应用开发
-
-**需求**：构建一个完整的任务管理系统
+### E. 全栈应用脚手架
 
 ```bash
 claude "
-帮我构建一个全栈任务管理系统：
-
-前端要求：
-- React + TypeScript + Vite
-- 使用 Tailwind CSS
-- 包含登录/注册页面
-- 任务列表（增删改查）
-- 拖拽排序功能
-- 实时更新
-
-后端要求：
-- Node.js + Express + TypeScript
-- PostgreSQL 数据库
-- JWT 认证
-- Socket.io 实时通信
-- RESTful API 设计
-
-部署要求：
-- Docker 容器化
-- docker-compose 一键启动
-- 包含环境变量配置
+生成任务管理系统脚手架：
+前端 React + Vite + Tailwind，登录、任务 CRUD、拖拽排序、Socket.io 实时同步
+后端 Express + TS + PostgreSQL + JWT
+docker-compose 一键起
 "
 ```
 
-**项目结构生成**：
+项目结构是常规四件套：
+
 ```
 task-manager/
-├── frontend/                 # React 前端
-│   ├── src/
-│   │   ├── components/      # 组件
-│   │   ├── pages/          # 页面
-│   │   ├── hooks/          # 自定义 hooks
-│   │   ├── services/       # API 服务
-│   │   └── types/          # TypeScript 类型
-│   ├── package.json
-│   └── vite.config.ts
-├── backend/                  # Node.js 后端
-│   ├── src/
-│   │   ├── controllers/    # 控制器
-│   │   ├── middleware/     # 中间件
-│   │   ├── models/         # 数据模型
-│   │   ├── routes/         # 路由
-│   │   ├── services/       # 业务逻辑
-│   │   └── utils/          # 工具函数
-│   ├── package.json
-│   └── tsconfig.json
-├── docker-compose.yml       # Docker 编排
-├── .env.example            # 环境变量示例
-└── README.md               # 项目说明
+├── frontend/         # React + Vite
+├── backend/          # Express + Socket.io
+├── docker-compose.yml
+└── .env.example
 ```
 
-**核心功能实现**：
+拖拽和广播的关键片段：
 
 ```typescript
-// 前端：TaskList 组件
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-
-export const TaskList: React.FC = () => {
-  const { data: tasks, refetch } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: () => taskService.getTasks()
-  });
-
-  const updateTaskOrder = useMutation({
-    mutationFn: taskService.updateTaskOrder,
-    onSuccess: () => refetch()
-  });
-
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    const items = Array.from(tasks || []);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    updateTaskOrder.mutate(items);
-  };
-
-  return (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="tasks">
-        {(provided) => (
-          <div {...provided.droppableProps} ref={provided.innerRef}>
-            {tasks?.map((task, index) => (
-              <Draggable key={task.id} draggableId={task.id} index={index}>
-                {(provided) => (
-                  <TaskItem 
-                    task={task} 
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                  />
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
-  );
+// 前端：react-beautiful-dnd 的 onDragEnd
+const handleDragEnd = (result) => {
+  if (!result.destination) return;
+  const items = [...(tasks ?? [])];
+  const [moved] = items.splice(result.source.index, 1);
+  items.splice(result.destination.index, 0, moved);
+  updateTaskOrder.mutate(items);
 };
+
+// 后端：socket 房间广播
+io.on('connection', (socket) => {
+  socket.on('join-room', (roomId) => socket.join(roomId));
+  socket.on('task-updated', async ({ taskId, updates, roomId }) => {
+    await TaskService.updateTask(taskId, updates);
+    socket.to(roomId).emit('task-update', { taskId, updates });
+  });
+});
 ```
 
-```typescript
-// 后端：Socket.io 实时更新
-import { Server } from 'socket.io';
-import { TaskService } from './services/TaskService';
-
-export const initializeSocket = (httpServer: any) => {
-  const io = new Server(httpServer, {
-    cors: { origin: process.env.FRONTEND_URL }
-  });
-
-  io.on('connection', (socket) => {
-    console.log('用户连接:', socket.id);
-
-    socket.on('join-room', (roomId: string) => {
-      socket.join(roomId);
-    });
-
-    socket.on('task-updated', async (data) => {
-      await TaskService.updateTask(data.taskId, data.updates);
-      
-      // 广播更新给房间内所有用户
-      socket.to(data.roomId).emit('task-update', {
-        taskId: data.taskId,
-        updates: data.updates
-      });
-    });
-  });
-
-  return io;
-};
-```
-
-**Docker 配置**：
 ```yaml
-# docker-compose.yml
-version: '3.8'
+# docker-compose.yml 三件套
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: taskmanager
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  backend:
-    build: ./backend
-    ports:
-      - "3001:3001"
-    environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/taskmanager
-      JWT_SECRET: your-secret-key
-    depends_on:
-      - postgres
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
+  postgres: { image: postgres:15, ports: ["5432:5432"] }
+  backend:  { build: ./backend,  ports: ["3001:3001"], depends_on: [postgres] }
+  frontend: { build: ./frontend, ports: ["5173:5173"], depends_on: [backend] }
 ```
 
----
-
-### 场景 7：移动应用开发
-
-**需求**：跨平台任务管理 App
+### F. 移动 App 离线优先
 
 ```bash
 claude "
-使用 React Native + Expo 开发移动应用：
-
-功能要求：
-- 跨平台（iOS/Android）
-- 离线优先设计
-- 推送通知
-- 生物识别认证
-- 手势操作（滑动删除、长按菜单）
-- 深色模式支持
-
-技术要求：
-- Expo SDK 50+
-- TypeScript
-- React Navigation 6
-- AsyncStorage 本地存储
-- Expo Notifications
-- React Query 数据管理
+React Native + Expo，离线优先的任务管理：
+- 在线直连 API，离线写 AsyncStorage 等联网同步
+- 推送、生物识别、深色模式
 "
 ```
 
-**核心实现**：
-
 ```typescript
-// App.tsx
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
-
-const Stack = createNativeStackNavigator();
-const queryClient = new QueryClient();
-
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <NavigationContainer>
-            <Stack.Navigator>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Tasks" component={TaskListScreen} />
-              <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
-            </Stack.Navigator>
-          </NavigationContainer>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
-}
-```
-
-```typescript
-// 离线优先的数据同步
-import { useQuery, useMutation } from '@tanstack/react-query';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import NetInfo from '@react-native-community/netinfo';
-
 export const useOfflineTasks = () => {
-  const { data: onlineTasks } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: taskService.getTasks,
-    enabled: false // 默认禁用，根据网络状态启用
-  });
-
-  const syncTasks = async () => {
-    const netInfo = await NetInfo.fetch();
-    if (netInfo.isConnected) {
-      // 在线时同步数据
-      const offlineTasks = await AsyncStorage.getItem('offlineTasks');
-      if (offlineTasks) {
-        await taskService.syncTasks(JSON.parse(offlineTasks));
-        await AsyncStorage.removeItem('offlineTasks');
-      }
-    }
-  };
-
-  const createTaskOffline = useMutation({
+  const createTask = useMutation({
     mutationFn: async (task: Task) => {
-      const netInfo = await NetInfo.fetch();
-      
-      if (netInfo.isConnected) {
-        return taskService.createTask(task);
-      } else {
-        // 离线时存储到本地
-        const existingTasks = await AsyncStorage.getItem('offlineTasks');
-        const tasks = existingTasks ? JSON.parse(existingTasks) : [];
-        tasks.push({ ...task, id: Date.now().toString(), pending: true });
-        await AsyncStorage.setItem('offlineTasks', JSON.stringify(tasks));
-        return task;
-      }
+      const { isConnected } = await NetInfo.fetch();
+      if (isConnected) return taskService.createTask(task);
+      // 离线：本地暂存
+      const cached = JSON.parse((await AsyncStorage.getItem('offlineTasks')) ?? '[]');
+      cached.push({ ...task, id: String(Date.now()), pending: true });
+      await AsyncStorage.setItem('offlineTasks', JSON.stringify(cached));
+      return task;
     },
-    onSuccess: () => syncTasks()
+    onSuccess: () => syncTasks(),   // 联网后批量同步
   });
-
-  return { createTaskOffline };
+  return { createTask };
 };
 ```
 
----
-
-### 场景 8：微服务架构设计
-
-**需求**：设计可扩展的电商系统
+### G. 微服务架构
 
 ```bash
 claude "
-设计微服务架构的电商系统：
-
-服务拆分：
-- 用户服务（注册、登录、个人信息）
-- 商品服务（商品管理、库存、分类）
-- 订单服务（订单创建、状态管理）
-- 支付服务（支付处理、退款）
-- 通知服务（邮件、短信、推送）
-
-技术要求：
-- Node.js + NestJS 框架
-- Docker + Kubernetes 部署
-- Redis 缓存
-- RabbitMQ 消息队列
-- PostgreSQL 数据库
-- API Gateway 统一入口
-- 分布式追踪（Jaeger）
-- 服务发现（Consul）
+设计电商微服务架构：
+拆 5 个服务：用户/商品/订单/支付/通知
+NestJS + K8s + RabbitMQ + PostgreSQL + Redis
+要 API Gateway、服务发现（Consul）、链路追踪（Jaeger）
 "
 ```
-
-**架构设计**：
-
-#### 微服务架构图
 
 ```mermaid
 graph TB
-    subgraph "客户端层"
-        A[Web前端]
-        B[移动App]
+    subgraph Client ["客户端"]
+        A[Web]
+        B[Mobile]
     end
-    
-    subgraph "API Gateway"
-        C[API Gateway]
-        C1[认证]
-        C2[路由]
-        C3[限流]
+    subgraph GW ["API Gateway"]
+        C[认证 / 路由 / 限流]
     end
-    
-    subgraph "微服务层"
-        D[用户服务]
-        E[商品服务]
-        F[订单服务]
-        G[支付服务]
-        H[通知服务]
+    subgraph SVC ["微服务"]
+        D[用户]
+        E[商品]
+        F[订单]
+        G[支付]
+        H[通知]
     end
-    
-    subgraph "消息队列"
+    subgraph MQ ["消息队列"]
         I[RabbitMQ]
     end
-    
-    subgraph "数据层"
-        J[PostgreSQL集群]
-        K[Redis缓存]
-        L[Elasticsearch]
+    subgraph DATA ["数据"]
+        J[(PostgreSQL)]
+        K[(Redis)]
     end
-    
-    subgraph "基础设施"
-        M[Consul服务发现]
-        N[Jaeger追踪]
-        O[Prometheus监控]
+    subgraph OBS ["可观测"]
+        L[Consul + Jaeger + Prometheus]
     end
-    
     A --> C
     B --> C
-    C --> C1
-    C1 --> C2
-    C2 --> C3
-    C3 --> D
-    C3 --> E
-    C3 --> F
-    C3 --> G
-    C3 --> H
-    
+    C --> D
+    C --> E
+    C --> F
+    C --> G
+    C --> H
+    F --> I
+    G --> I
+    H --> I
     D --> J
     E --> J
     F --> J
     D --> K
-    E --> K
-    F --> K
-    E --> L
-    
-    F --> I
-    G --> I
-    H --> I
-    I --> F
-    I --> H
-    
-    D -.-> M
-    E -.-> M
-    F -.-> M
-    G -.-> M
-    H -.-> M
-    
-    D -.-> N
-    E -.-> N
-    F -.-> N
-    G -.-> N
-    H -.-> N
-    
-    D -.-> O
-    E -.-> O
-    F -.-> O
-    G -.-> O
-    H -.-> O
-    
-    style C fill:#e1f5ff
-    style I fill:#fff9c4
-    style J fill:#c8e6c9
+    D -.-> L
+    E -.-> L
+    F -.-> L
+
+    classDef client fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef gw fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef svc fill:#f1f8e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef mq fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#bf360c;
+    classDef data fill:#e0f7fa,stroke:#00838f,stroke-width:2px,color:#006064;
+    classDef obs fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    class A,B client;
+    class C gw;
+    class D,E,F,G,H svc;
+    class I mq;
+    class J,K data;
+    class L obs;
 ```
 
-```typescript
-// API Gateway 配置
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as proxy from 'express-http-proxy';
+Gateway 的核心就是 proxy 转发：
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
-  // 全局验证管道
-  app.useGlobalPipes(new ValidationPipe());
-  
-  // Swagger 文档
-  const config = new DocumentBuilder()
-    .setTitle('E-commerce API Gateway')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-  
-  // 微服务代理
-  app.use('/api/users', proxy('http://user-service:3001'));
-  app.use('/api/products', proxy('http://product-service:3002'));
-  app.use('/api/orders', proxy('http://order-service:3003'));
-  app.use('/api/payments', proxy('http://payment-service:3004'));
-  
-  await app.listen(3000);
-}
+```typescript
+app.use('/api/users',    proxy('http://user-service:3001'));
+app.use('/api/products', proxy('http://product-service:3002'));
+app.use('/api/orders',   proxy('http://order-service:3003'));
+app.use('/api/payments', proxy('http://payment-service:3004'));
 ```
 
-```typescript
-// 分布式事件处理
-import { Controller } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
-import { OrderService } from './order.service';
+服务之间走事件：
 
+```typescript
 @Controller()
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
-
   @EventPattern('order_created')
   async handleOrderCreated(@Payload() data: any) {
-    // 处理订单创建事件
     await this.orderService.processOrder(data);
-    
-    // 发布库存扣减事件
-    await this.orderService.publishEvent('inventory_reserved', {
-      productId: data.productId,
-      quantity: data.quantity,
-      orderId: data.orderId
-    });
+    await this.orderService.publishEvent('inventory_reserved', { /*...*/ });
   }
 
   @EventPattern('payment_completed')
   async handlePaymentCompleted(@Payload() data: any) {
-    // 支付完成，更新订单状态
     await this.orderService.updateOrderStatus(data.orderId, 'PAID');
-    
-    // 发布发货通知事件
-    await this.orderService.publishEvent('order_shipped', {
-      orderId: data.orderId,
-      userId: data.userId
-    });
+    await this.orderService.publishEvent('order_shipped', { /*...*/ });
   }
 }
 ```
 
-**Kubernetes 部署**：
+K8s 部署模板：
+
 ```yaml
-# k8s/user-service.yaml
 apiVersion: apps/v1
 kind: Deployment
-metadata:
-  name: user-service
+metadata: { name: user-service }
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: user-service
   template:
-    metadata:
-      labels:
-        app: user-service
     spec:
       containers:
-      - name: user-service
-        image: user-service:latest
-        ports:
-        - containerPort: 3001
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: db-secret
-              key: url
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: user-service
-spec:
-  selector:
-    app: user-service
-  ports:
-  - port: 3001
-    targetPort: 3001
+        - name: user-service
+          image: user-service:latest
+          ports: [{ containerPort: 3001 }]
+          env: [{ name: DATABASE_URL, valueFrom: { secretKeyRef: { name: db-secret, key: url } } }]
 ```
 
----
-
-### 场景 9：AI 驱动的智能系统
-
-**需求**：构建智能客服系统
+### H. AI 智能客服
 
 ```bash
 claude "
-构建 AI 智能客服系统：
-
-核心功能：
-- 自然语言理解（NLU）
-- 意图识别和实体提取
-- 多轮对话管理
-- 知识库检索
-- 情感分析
-- 智能路由
-
-技术栈：
-- Python + FastAPI
-- LangChain 框架
-- OpenAI/Claude API
-- Elasticsearch 搜索
-- Redis 会话存储
-- WebSocket 实时通信
-- React 前端界面
+做 AI 客服系统：
+意图识别 + 实体抽取 + 多轮对话 + 知识库检索 + 情感分析
+Python + FastAPI + LangChain + Elasticsearch + Redis + WebSocket
 "
 ```
 
-**智能对话引擎**：
+对话引擎的骨架：
 
 ```python
-# conversation_engine.py
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.vectorstores import ElasticsearchStore
-from typing import Dict, List
-
 class ConversationEngine:
     def __init__(self):
         self.embeddings = OpenAIEmbeddings()
         self.vectorstore = ElasticsearchStore(
             es_url="http://localhost:9200",
             index_name="knowledge_base",
-            embedding=self.embeddings
+            embedding=self.embeddings,
         )
         self.memory = ConversationBufferWindowMemory(
-            k=5, 
-            return_messages=True,
-            memory_key="chat_history"
-        )
-        
+            k=5, return_messages=True, memory_key="chat_history")
         self.chain = ConversationalRetrievalChain.from_llm(
             llm=ChatOpenAI(model="gpt-4"),
             retriever=self.vectorstore.as_retriever(),
-            memory=self.memory,
-            verbose=True
-        )
-    
-    async def process_message(self, 
-                             user_id: str, 
-                             message: str) -> Dict[str, any]:
-        # 意图识别
+            memory=self.memory)
+
+    async def process_message(self, user_id: str, message: str) -> dict:
         intent = await self.detect_intent(message)
-        
-        # 情感分析
-        sentiment = await self.analyze_sentiment(message)
-        
-        # 生成回复
         if intent == "complaint":
             response = await self.handle_complaint(message)
         elif intent == "inquiry":
-            response = await self.chain({"question": message})
-            response = response["answer"]
+            response = (await self.chain({"question": message}))["answer"]
         else:
             response = await self.generate_general_response(message)
-        
-        # 保存对话历史
         await self.save_conversation(user_id, message, response)
-        
-        return {
-            "response": response,
-            "intent": intent,
-            "sentiment": sentiment,
-            "confidence": 0.85
-        }
-    
-    async def detect_intent(self, message: str) -> str:
-        # 使用分类模型识别意图
-        intents = {
-            "complaint": ["投诉", "不满", "问题", "错误"],
-            "inquiry": ["查询", "怎么", "如何", "什么"],
-            "greeting": ["你好", "您好", "早上好"],
-            "farewell": ["再见", "谢谢", "感谢"]
-        }
-        
-        for intent, keywords in intents.items():
-            if any(keyword in message for keyword in keywords):
-                return intent
-        
-        return "general"
+        return {"response": response, "intent": intent}
 ```
 
-**实时 WebSocket 通信**：
+WebSocket 入口：
 
 ```python
-# websocket_handler.py
-from fastapi import WebSocket, WebSocketDisconnect
-from typing import List
-import json
-import redis
-
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-        self.redis_client = redis.Redis(host='localhost', port=6379, db=0)
-    
-    async def connect(self, websocket: WebSocket, user_id: str):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-        
-        # 加载历史对话
-        history = self.redis_client.get(f"chat_history:{user_id}")
-        if history:
-            await websocket.send_text(json.dumps({
-                "type": "history",
-                "data": json.loads(history)
-            }))
-    
-    async def disconnect(self, websocket: WebSocket, user_id: str):
-        self.active_connections.remove(websocket)
-    
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-manager = ConnectionManager()
-
 @app.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: str):
+async def ws(websocket: WebSocket, user_id: str):
     await manager.connect(websocket, user_id)
     engine = ConversationEngine()
-    
     try:
         while True:
-            data = await websocket.receive_text()
-            message = json.loads(data)
-            
-            if message["type"] == "message":
-                response = await engine.process_message(
-                    user_id, 
-                    message["content"]
-                )
-                
-                await websocket.send_text(json.dumps({
-                    "type": "response",
-                    "data": response
-                }))
-                
+            data = json.loads(await websocket.receive_text())
+            if data["type"] == "message":
+                result = await engine.process_message(user_id, data["content"])
+                await websocket.send_text(json.dumps({"type": "response", "data": result}))
     except WebSocketDisconnect:
         await manager.disconnect(websocket, user_id)
 ```
 
----
-
-### 场景 10：DevOps 自动化平台
-
-**需求**：构建 CI/CD 自动化平台
+### I. DevOps 自动化
 
 ```bash
 claude "
-构建 DevOps 自动化平台：
-
-功能模块：
-- Git 仓库管理集成
-- 自动化构建和测试
-- 容器镜像管理
-- 部署流水线设计
-- 监控和告警系统
-- 日志聚合和分析
-
-技术实现：
-- Node.js + Express 后端
-- React + TypeScript 前端
-- Docker 容器化
-- GitHub Actions CI/CD
+搭 CI/CD：
+- GitHub Actions 跑测试 → 构建 Docker 镜像 → 推 registry → K8s 部署
 - Prometheus + Grafana 监控
-- ELK Stack 日志处理
-- Kubernetes 部署
+- 错误率 > 5% 推 Slack
 "
 ```
 
-**CI/CD 流水线配置**：
-
-#### CI/CD流水线流程图
+#### CI/CD 流水线
 
 ```mermaid
 flowchart TB
-    subgraph "代码提交"
-        A[Git Push]
-        B[Pull Request]
-    end
-    
-    subgraph "测试阶段"
-        C[单元测试]
-        D[E2E测试]
-        E[代码覆盖率]
-    end
-    
-    subgraph "构建阶段"
-        F[Docker构建]
-        G[镜像推送]
-    end
-    
-    subgraph "部署阶段"
-        H[Staging部署]
-        I[人工验证]
-        J[生产部署]
-    end
-    
-    subgraph "监控阶段"
-        K[健康检查]
-        L[性能监控]
-        M[告警通知]
-    end
-    
-    A --> C
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
-    L --> M
-    
-    style A fill:#e1f5ff
-    style J fill:#c8e6c9
-    style M fill:#ffcdd2
+    A[Git Push / PR] --> C[单元测试]
+    C --> D[E2E 测试]
+    D --> E[覆盖率检查]
+    E --> F[Docker 构建]
+    F --> G[推 Registry]
+    G --> H[Staging 部署]
+    H --> I{人工验证}
+    I -->|通过| J[生产部署]
+    J --> K[健康检查]
+    K --> L[性能监控]
+    L --> M{告警}
+    M -->|触发| N[Slack 通知]
+
+    classDef start fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef test fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:#e65100;
+    classDef build fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    classDef deploy fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px,color:#1b5e20;
+    classDef alert fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+    class A start;
+    class C,D,E,K,L test;
+    class F,G build;
+    class H,I,J deploy;
+    class M,N alert;
 ```
 
 ```yaml
-# .github/workflows/deploy.yml
-name: Deploy to Production
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests
-        run: npm test
-      
-      - name: Run E2E tests
-        run: npm run test:e2e
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-
+      - uses: actions/setup-node@v3
+        with: { node-version: '18', cache: 'npm' }
+      - run: npm ci && npm test && npm run test:e2e
+      - uses: codecov/codecov-action@v3
   build:
     needs: test
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Build Docker image
-        run: |
+      - run: |
           docker build -t myapp:${{ github.sha }} .
-          docker tag myapp:${{ github.sha }} myapp:latest
-      
-      - name: Push to registry
-        run: |
           echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
           docker push myapp:${{ github.sha }}
-          docker push myapp:latest
-
   deploy:
     needs: build
-    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: Deploy to Kubernetes
-        run: |
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
-          export KUBECONFIG=kubeconfig
-          
-          # 更新镜像版本
-          sed -i "s/myapp:latest/myapp:${{ github.sha }}/g" k8s/deployment.yaml
-          
-          # 应用更新
-          kubectl apply -f k8s/
-          
-          # 等待部署完成
+      - run: |
+          kubectl set image deployment/myapp myapp=myapp:${{ github.sha }}
           kubectl rollout status deployment/myapp
 ```
 
-**监控和告警系统**：
+监控中间件：
 
 ```typescript
-// monitoring-service.ts
-import express from 'express';
-import prometheus from 'prom-client';
-import { logger } from './utils/logger';
-
-// 创建指标
-const httpRequestDuration = new prometheus.Histogram({
+const httpDuration = new prometheus.Histogram({
   name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code']
+  help: 'HTTP 请求时长',
+  labelNames: ['method', 'route', 'status_code'],
 });
 
-const httpRequestTotal = new prometheus.Counter({
-  name: 'http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code']
-});
-
-const activeConnections = new prometheus.Gauge({
-  name: 'websocket_connections_active',
-  help: 'Number of active WebSocket connections'
-});
-
-// 中间件：收集指标
-export const metricsMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const start = Date.now();
-  
+export const metrics = (req, res, next) => {
+  const t = Date.now();
   res.on('finish', () => {
-    const duration = (Date.now() - start) / 1000;
-    const route = req.route?.path || req.path;
-    
-    httpRequestDuration
-      .labels(req.method, route, res.statusCode.toString())
-      .observe(duration);
-    
-    httpRequestTotal
-      .labels(req.method, route, res.statusCode.toString())
-      .inc();
+    httpDuration
+      .labels(req.method, req.route?.path || req.path, String(res.statusCode))
+      .observe((Date.now() - t) / 1000);
   });
-  
   next();
 };
-
-// 告警规则
-export const checkAlerts = async () => {
-  const metrics = await prometheus.register.getMetricsAsJSON();
-  
-  // 检查错误率
-  const errorRate = calculateErrorRate(metrics);
-  if (errorRate > 0.05) { // 5% 错误率阈值
-    await sendAlert({
-      level: 'critical',
-      message: `错误率过高: ${(errorRate * 100).toFixed(2)}%`,
-      metric: 'error_rate',
-      value: errorRate
-    });
-  }
-  
-  // 检查响应时间
-  const avgResponseTime = calculateAvgResponseTime(metrics);
-  if (avgResponseTime > 1000) { // 1秒阈值
-    await sendAlert({
-      level: 'warning',
-      message: `平均响应时间过长: ${avgResponseTime}ms`,
-      metric: 'response_time',
-      value: avgResponseTime
-    });
-  }
-};
-
-// 告警发送
-const sendAlert = async (alert: Alert) => {
-  // 发送到 Slack
-  await fetch(process.env.SLACK_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      text: `🚨 ${alert.level.toUpperCase()}: ${alert.message}`,
-      attachments: [{
-        color: alert.level === 'critical' ? 'danger' : 'warning',
-        fields: [
-          { title: '指标', value: alert.metric },
-          { title: '当前值', value: alert.value.toString() }
-        ]
-      }]
-    })
-  });
-  
-  // 记录日志
-  logger.warn('Alert triggered', alert);
-};
+// 错误率 > 5% 或 P95 > 1s 时触发 Slack webhook
 ```
 
 ---
 
 ## 高效工作流
 
-### 1. 渐进式开发
+### 渐进式开发
+
+复杂的事情拆四步问 Claude，每步看一眼输出再继续，比一口气描述完更不容易跑偏：
 
 ```bash
-# 步骤 1：定义接口
-claude "设计用户管理 API 的接口规范"
-
-# 步骤 2：实现核心逻辑
-claude "基于刚才的接口规范实现后端服务"
-
-# 步骤 3：添加测试
-claude "为用户管理 API 编写单元测试"
-
-# 步骤 4：生成文档
-claude "生成 API 文档，包含示例代码"
+claude "设计用户管理 API 的接口规范"        # 1. 定义接口
+claude "按上面的规范实现后端服务"            # 2. 实现逻辑
+claude "为这套接口写单元测试"                # 3. 加测试
+claude "生成 API 文档，附调用示例"           # 4. 出文档
 ```
 
-### 2. 错误处理工作流
+### Bug 处理四步法
 
 ```bash
-# 步骤 1：复现错误
-claude "这个 API 返回 500 错误，帮我分析日志"
-
-# 步骤 2：定位问题
-claude "根据错误信息，定位可能的问题原因"
-
-# 步骤 3：修复方案
-claude "提供具体的修复代码"
-
-# 步骤 4：预防措施
-claude "添加监控和告警，防止类似问题"
+claude "这个 API 返回 500，帮我看日志"      # 1. 复现/分析
+claude "根据日志定位最可能的原因"            # 2. 定位
+claude "给出修复代码"                        # 3. 修复
+claude "加监控 + 告警防止类似问题"           # 4. 预防
 ```
 
-### 4. Plan 模式工作流
+### Plan 模式
 
-先规划后执行，避免返工：
+复杂任务先按两次 `Shift+Tab` 进入 Plan 模式，描述需求让 Claude 列出执行步骤；看完没问题再切回执行模式 + Auto-accept。这套对"动手前能想清楚"的任务特别管用，能避免写到一半推倒重来。
 
-```bash
-# 进入 Plan 模式（按两次 Shift+Tab）
-# 详细描述需求，让 Claude 制定方案
+### 多 Agent 协作
 
-# 方案确认后，切换回执行模式
-# 使用 Auto-accept 一次性完成
-```
-
-### 5. 多 Agent 协作
-
-复杂任务分而治之：
-
-```bash
-# 终端 1：前端 Agent
-claude --session frontend "实现 React 组件"
-
-# 终端 2：后端 Agent  
-claude --session backend "开发 API 接口"
-
-# 终端 3：测试 Agent
-claude --session testing "编写测试用例"
-
-# 主终端：协调 Agent
-claude "整合前后端，确保接口对接正确"
-```
+参考前面的[团队协作模式](#团队协作模式)章节。要点：协调 session 单独开，所有跨 session 的接口约定先在协调里固化。
 
 ---
 
-## 实用技巧
+## 实用提示词技巧
 
-### 1. 精准提问
+### 写得具体一些
 
-**不好**：
-```bash
-claude "优化这个函数"
+```
+× 优化这个函数
+○ 把这个函数的时间复杂度从 O(n²) 降到 O(n)，输入是已排序的数组，
+  保持 API 不变，附上前后的基准对比
 ```
 
-**好**：
-```bash
-claude "
-优化这个函数的时间复杂度：
-function processData(data) {
-  return data.map(item => 
-    data.find(d => d.id === item.parentId)
-  );
-}
+### 把上下文摆出来
 
-当前是 O(n²)，需要优化到 O(n)
-"
+```
+× 修复登录 bug
+○ 修复登录 bug：
+  - React 18 + TypeScript
+  - 认证库：@auth0/react-auth0
+  - 报错信息：Cannot read property 'name' of undefined
+  - 出现在 src/components/Login.tsx 的 onLoginSuccess 回调里
 ```
 
-### 2. 提供上下文
+### 复杂任务拆步骤
 
-**不好**：
-```bash
-claude "修复登录 bug"
-```
-
-**好**：
-```bash
-claude "
-修复登录 bug：
-- 使用 React + TypeScript
-- 认证库：@auth0/react-auth0
-- 错误信息：'Cannot read property of undefined'
-- 相关文件：src/components/Login.tsx
-"
-```
-
-### 3. 分步骤处理复杂任务
+每步只问一件事，比起一次抛出 5 个要求，结果质量好很多：
 
 ```bash
-# 第一步：理解需求
-claude "分析这个需求的技术要点：..."
-
-# 第二步：设计方案
-claude "基于刚才的分析，设计技术方案"
-
-# 第三步：实现代码
-claude "按照设计方案实现核心功能"
-
-# 第四步：测试验证
-claude "编写测试用例验证功能"
+claude "分析这个需求的技术要点"
+claude "基于刚才的分析，给一份技术方案"
+claude "按方案实现核心模块"
+claude "为核心模块写测试"
 ```
 
-### 4. 使用 CLAUDE.md 配置项目
+### 用 `CLAUDE.md` 把项目背景固化
 
-在项目根目录创建 CLAUDE.md：
+放在项目根目录，Claude 每次自动加载，省得反复粘贴上下文：
 
 ```markdown
 # 项目：电商系统
 
 ## 技术栈
-- 前端：React 18 + TypeScript + Tailwind CSS
-- 后端：Node.js + Express + MongoDB
-- 部署：Docker + AWS
+- 前端 React 18 + TypeScript + Tailwind
+- 后端 Node + Express + MongoDB
+- 部署 Docker + AWS
 
 ## 编码规范
-- 使用 ESLint + Prettier
-- 组件用 PascalCase
-- 文件名用 kebab-case
-- 提交信息遵循 Conventional Commits
+- ESLint + Prettier
+- 组件 PascalCase，文件 kebab-case
+- 提交信息走 Conventional Commits
 
 ## 项目结构
-```
 src/
-  components/    # React 组件
-  pages/         # 页面组件
-  hooks/         # 自定义 hooks
-  services/      # API 服务
-  utils/         # 工具函数
-  types/         # TypeScript 类型
+  components/   # React 组件
+  pages/        # 页面
+  hooks/        # 自定义 hooks
+  services/     # API 服务
+  utils/        # 工具函数
+  types/        # 类型定义
+
+## 测试
+- 单测 Jest + RTL，覆盖率 ≥ 80%
+- E2E 走 Playwright
+
+## 部署
+push main → CI/CD → staging → 人工验证 → 生产
 ```
 
-## 测试策略
-- 单元测试：Jest + React Testing Library
-- E2E 测试：Playwright
-- 测试覆盖率要求：80%+
+### 多文件 / 自定义工作流
 
-## 部署流程
-1. 推送到 main 分支触发 CI/CD
-2. 自动运行测试和构建
-3. 部署到 staging 环境
-4. 人工验证后部署到生产
+```bash
+# 把常用提示词存下来
+claude --save "api-development" "
+开发 REST API 的标准流程：
+1. 数据模型
+2. 控制器
+3. 验证中间件
+4. 单元测试
+5. API 文档
+"
+claude --load "api-development" "用户管理模块"
+
+# 一次性给多个相关文件
+claude --file src/auth/service.ts --file src/auth/middleware.ts \
+  "分析整个认证流程，找出潜在问题"
 ```
 
 ---
 
 ## 常见问题
 
-### Q: Claude Code 生成的代码可靠吗？
+**Q：Claude 生成的代码能直接用吗？**
 
-A: Claude Code 生成的代码质量很高，但仍需要人工审查。建议：
-- 重要功能一定要写测试
-- 关注安全性和性能
-- 逐步集成，不要一次性替换大量代码
+可以读、可以参考，但别盲信。重要功能一定要写测试，安全敏感的（认证、支付、权限）人工审一遍。习惯做法是把生成的代码当 PR 看，过一遍 code review 流程再合。
 
-### Q: 如何让 Claude Code 理解项目结构？
+**Q：怎么让 Claude 理解项目结构？**
 
-A: 提供项目上下文：
+最稳的办法是写 `CLAUDE.md`（见上文）。临时也可以在提示词里贴一段目录树和技术栈说明。
+
+**Q：项目很大怎么办？**
+
+分模块给。每次只让 Claude 关注一两个相关文件：
+
 ```bash
-claude "
-我的项目结构：
-src/
-  components/    # React 组件
-  services/      # API 服务
-  utils/         # 工具函数
-  types/         # TypeScript 类型定义
-
-技术栈：React 18 + TypeScript + Tailwind CSS
-"
-```
-
-### Q: 如何处理大型项目？
-
-A: 分模块处理：
-```bash
-# 先处理核心模块
 claude "实现用户认证模块"
-
-# 再处理业务模块
 claude "基于认证模块实现订单系统"
-
-# 最后集成测试
-claude "编写端到端测试"
+claude "写跨模块的 E2E 测试"
 ```
+
+避免一次性甩"看完整个项目再帮我改"这种需求——Claude 不擅长，你也很难审查它的输出。
 
 ---
 
-## 最佳实践
+## 小结
 
-1. **明确需求**：详细描述功能需求和技术约束
-2. **提供上下文**：说明项目结构、技术栈、业务背景
-3. **分步进行**：复杂任务拆分为多个小步骤
-4. **及时验证**：每步完成后进行测试和验证
-5. **持续优化**：基于反馈不断改进代码质量
+用好 Claude Code 没什么秘诀，就四件事：
 
----
+- **写清楚需求**——目标、上下文、约束，至少占两样
+- **拆小步走**——复杂任务每步只问一件事
+- **该审就审**——代码当 PR 看，测试别省
+- **沉淀套路**——常用提示词存起来，项目背景写进 `CLAUDE.md`
 
-## 进阶使用
-
-### 自定义工作流
-
-创建可重复的开发流程：
-
-```bash
-# 保存常用提示词
-claude --save "api-development" "
-开发 REST API：
-1. 设计数据模型
-2. 实现控制器
-3. 添加验证中间件
-4. 编写单元测试
-5. 生成 API 文档
-"
-
-# 使用保存的工作流
-claude --load "api-development" "用户管理模块"
-```
-
-### 多文件协作
-
-```bash
-# 同时分析多个相关文件
-claude --file src/auth/service.ts --file src/auth/middleware.ts "
-分析认证系统的完整流程，找出潜在问题
-"
-```
-
----
-
-## 总结
-
-Claude Code 是强大的编程助手，关键在于：
-
-- **精准提问**：明确需求，提供充分上下文
-- **渐进开发**：分步骤处理复杂任务
-- **质量把控**：人工审查 + 自动化测试
-- **持续学习**：积累项目特定的最佳实践
-
-通过合理使用 Claude Code，可以显著提升开发效率，让开发者更专注于业务逻辑和架构设计。
+Claude 替你接管了大量机械工作，但"想清楚做什么"和"判断结果对不对"这两件事，依然是你的活。
 
 ---
 
 ## 相关资源
 
 - [Claude Code 官方文档](https://docs.anthropic.com/claude-code)
-- [Claude Code 快速入门（本仓库 claude-code-guide）](https://github.com/microwind/ai-skills/blob/main/docs/claude/claude-code-guide/01-快速入门.md)
+- [Claude Code 快速入门（本仓库）](https://github.com/microwind/ai-skills/blob/main/docs/claude/claude-code-guide/01-快速入门.md)
 - [Claude Code 完整学习系列（本仓库索引）](https://github.com/microwind/ai-skills/blob/main/docs/claude/claude-code-guide/README.md)
-- [AI 编程核心知识库](https://microwind.github.io)
 - [Claude Code Skills 推荐（本仓库）](https://github.com/microwind/ai-skills/blob/main/docs/skills/Claude-Code-10大Skills推荐.md)
-- [51万行代码分析报告（附录 · 本仓库）](https://github.com/microwind/ai-skills/blob/main/docs/claude/claude-code-guide/附录-最佳实践.md)
+- [51 万行代码分析报告（本仓库附录）](https://github.com/microwind/ai-skills/blob/main/docs/claude/claude-code-guide/附录-最佳实践.md)
 - [Claude Code AI 编程完全指南（本仓库长文）](https://github.com/microwind/ai-skills/blob/main/docs/claude/ClaudeCodeAI编程完全指南.md)

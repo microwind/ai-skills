@@ -1,7 +1,6 @@
 ---
 name: 事件驱动架构
 description: "基于事件的异步通信架构，组件通过发布和订阅事件来交互，实现松耦合和高可扩展性。"
-license: MIT
 ---
 
 # 事件驱动架构 (Event-Driven Architecture, EDA)

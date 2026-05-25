@@ -1,20 +1,30 @@
 ---
 name: 领域事件
 description: "表示领域中发生的重要业务事件，用于聚合间通信和实现最终一致性。"
-license: MIT
 ---
 
 # 领域事件 (Domain Events)
 
 ## 概述
 
-领域事件表示**领域中已经发生的重要业务事实**，是过去时态的描述。
+领域事件表示**领域中已经发生的、值得关注的业务事实**，是过去时态的描述。Martin Fowler 将其概括为"捕捉对领域有意义的事情发生的记忆"（"captures the memory of something interesting which affects the domain"）。
 
 **核心特征**：
-- 已发生的事实（不可变）
-- 命名用过去时态（OrderPlaced, PaymentCompleted）
-- 包含事件发生时的关键数据
-- 用于聚合间的松耦合通信
+- 已发生的事实（不可变 / immutable）
+- 命名用过去时态（OrderPlaced、PaymentCompleted）
+- 由聚合根产生与发布
+- 包含事件发生时的关键数据（事件 ID、聚合 ID、发生时间、必要快照）
+- 用于聚合间 / 上下文间的松耦合通信，是实现最终一致性的基础
+
+**事件的最小元素**（推荐统一约定）：
+
+| 字段 | 含义 |
+|------|------|
+| `eventId` | 事件全局唯一标识，便于幂等处理 |
+| `occurredAt` | 事件发生时间（领域时间） |
+| `aggregateId` | 产生事件的聚合根标识 |
+| `aggregateType` | 聚合类型 |
+| `payload` | 业务关心的快照数据 |
 
 ## 代码示例
 
@@ -122,6 +132,19 @@ class Order:
         self._events.clear()
         return events
 ```
+
+## 领域事件 vs 集成事件
+
+Vaughn Vernon 在 IDDD 中强调二者的区分（也常被映射到 EventStorming 的"内部事件 / 外部事件"）：
+
+| 维度 | 领域事件（Domain Event） | 集成事件（Integration Event） |
+|------|---------------------|----------------------------|
+| 作用范围 | **同一限界上下文内** | **跨限界上下文 / 跨服务** |
+| 模型耦合 | 紧贴领域模型，使用通用语言 | 面向契约，常用 Schema（Avro / JSON Schema）发布 |
+| 传输方式 | 进程内事件总线、Outbox | 消息中间件（Kafka、RabbitMQ） |
+| 演化兼容 | 可随领域演进调整 | 需要严格版本管理，向后兼容 |
+
+工程实践上，常以**领域事件为源**，在边界处**转换为集成事件**对外发布（例如通过 Outbox 表）。
 
 ## 事件命名规范
 

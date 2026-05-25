@@ -1,7 +1,6 @@
 ---
 name: DDD 与 MVC 对比
 description: "对比 MVC 模式与 DDD 方法论的差异，分析 MVC 在复杂业务下的局限性，帮助团队判断何时应采用 DDD。"
-license: MIT
 ---
 
 # DDD 与 MVC 对比

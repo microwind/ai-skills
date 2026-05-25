@@ -1,7 +1,6 @@
 ---
 name: 战略设计
 description: "DDD战略设计总览：从上帝视角规划系统，对领域进行分析、划分子域、确定限界上下文和上下文映射，回答'系统如何拆分'的顶层问题。"
-license: MIT
 ---
 
 # 战略设计 (Strategic Design)
@@ -103,15 +102,19 @@ license: MIT
 ### 4. [上下文映射 (Context Mapping)](../context-mapping/)
 
 ```
-上下文映射 = 描述限界上下文之间的关系和集成方式。
+上下文映射 = 描述限界上下文之间的关系和集成方式，
+            同时刻画团队间的协作关系与权力结构。
 
-常见模式：
-  ▸ 共享内核 (Shared Kernel)
-  ▸ 客户 - 供应商 (Customer-Supplier)
-  ▸ 防腐层 (Anti-Corruption Layer)
-  ▸ 开放主机服务 (Open Host Service)
-  ▸ 发布语言 (Published Language)
-  ▸ 各行其道 (Separate Ways)
+DDD 共识的 9 种模式：
+  ▸ Partnership（合作关系）
+  ▸ Shared Kernel（共享内核）
+  ▸ Customer/Supplier（客户-供应商）
+  ▸ Conformist（追随者）
+  ▸ Anticorruption Layer（防腐层）
+  ▸ Open Host Service（开放主机服务）
+  ▸ Published Language（发布语言）
+  ▸ Separate Ways（各行其道）
+  ▸ Big Ball of Mud（大泥球——遗留区域显式标记）
 ```
 
 ## 战略设计的典型流程

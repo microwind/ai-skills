@@ -1,7 +1,6 @@
 ---
 name: 四色建模法
 description: "从业务收入流和成本结构（现金流/KPI）出发，通过强分析逻辑推导凭证链与领域事件流，产出稳定的领域模型。"
-license: MIT
 ---
 
 # 四色建模法 (Four-Color Modeling)

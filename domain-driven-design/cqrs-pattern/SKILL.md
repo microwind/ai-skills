@@ -1,7 +1,6 @@
 ---
 name: CQRS模式
 description: "命令查询责任分离，将数据的写入操作和读取操作分别用不同的模型处理，优化各自的性能。"
-license: MIT
 ---
 
 # CQRS 模式 (Command Query Responsibility Segregation)

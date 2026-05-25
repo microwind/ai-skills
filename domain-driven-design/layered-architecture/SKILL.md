@@ -1,7 +1,6 @@
 ---
 name: DDD 分层架构 (COLA)
 description: "以领域层为核心的应用分层架构，分为接口门面层、应用层、领域层、仓储层、基础设施层，保证高内聚低耦合和业务逻辑稳定。"
-license: MIT
 ---
 
 # DDD 分层架构 (Layered Architecture / COLA)

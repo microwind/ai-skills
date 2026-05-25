@@ -1,7 +1,6 @@
 ---
 name: 事件风暴建模
 description: "通过多角色工作坊发散式探寻领域事件、命令和策略，快速建立业务共识并产出领域模型的轻量级建模方法。"
-license: MIT
 ---
 
 # 事件风暴建模 (Event Storming)

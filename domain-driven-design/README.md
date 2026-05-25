@@ -8,10 +8,31 @@
 
 ## DDD 基本结构图
 
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': { 'sectionBkgColor': '#f1f1f1', 'altSectionBkgColor': '#f1f1f1', 'gridColor': '#e9ecef'}}}%%
+flowchart TB
+    subgraph DDD["DDD 分层架构"]
+        UI[用户界面层<br/>User Interface]
+        App[应用服务层<br/>Application Layer]
+        Domain[领域层<br/>Domain Layer]
+        Infra[基础设施层<br/>Infrastructure Layer]
+    end
+    
+    UI --> App
+    App --> Domain
+    Domain -.依赖接口.-> Infra
+    Infra -.实现接口.-> Domain
+    
+    style UI fill:#E11D1D,color:#ffffff
+    style App fill:#CE7005,color:#FFFFFF
+    style Domain fill:#097A93,color:#ffffff
+    style Infra fill:#018663,color:#ffffff
+```
+
 DDD 将业务分层切片：**领域 → 子域 → 限界上下文 → 聚合 → 实体/值对象**，战略设计定边界，战术设计填血肉。
 
 ```mermaid
-flowchart TB
+flowchart LR
     classDef domainCls fill:#fde68a,stroke:#b45309,stroke-width:2px,color:#7c2d12
     classDef coreCls fill:#fecaca,stroke:#b91c1c,stroke-width:2px,color:#7f1d1d
     classDef supportCls fill:#bae6fd,stroke:#0369a1,stroke-width:2px,color:#0c4a6e
@@ -235,4 +256,23 @@ flowchart TB
 > **DDD 不是银弹**。对于不复杂的项目，MVC 更简单高效。深刻理解业务、洞察问题本质，才是架构师最核心的能力体现。
 
 ## 参考链接
-https://www.zhihu.com/tardis/zm/art/641295531
+
+- [Domain-Driven Design 官方网站](https://domainlanguage.com/ddd/)
+- Eric Evans《Domain-Driven Design Reference》 —— 蓝皮书概念的官方速查（PDF 免费）
+  https://www.domainlanguage.com/ddd/reference/
+- Martin Fowler《Bounded Context》 —— 限界上下文最权威的短文
+  https://martinfowler.com/bliki/BoundedContext.html
+- Martin Fowler《AnemicDomainModel》 —— 贫血模型反模式定义
+  https://martinfowler.com/bliki/AnemicDomainModel.html
+
+- Alistair Cockburn《Hexagonal Architecture》 —— 六边形架构原文
+  https://alistair.cockburn.us/hexagonal-architecture/
+- Jeffrey Palermo《The Onion Architecture》系列 —— 洋葱架构原始系列文章
+  https://jeffreypalermo.com/2008/07/the-onion-architecture-part-1/
+- Robert C. Martin《The Clean Architecture》 —— 整洁架构权威阐述
+  https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
+- Herberto Graça《DDD, Hexagonal, Onion, Clean, CQRS, … How I put it all together》 —— Explicit Architecture 综合视图原文
+  https://herbertograca.com/2017/11/16/explicit-architecture-01-ddd-hexagonal-onion-clean-cqrs-how-i-put-it-all-together/
+
+[一文读懂：领域驱动设计DDD](https://www.zhihu.com/tardis/zm/art/641295531)
+[AI编程：DDD开源SKILLS](https://github.com/microwind/ai-skills/tree/main/domain-driven-design)

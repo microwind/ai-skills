@@ -1,7 +1,6 @@
 ---
 name: 六边形架构
 description: "通过端口和适配器将应用核心与外部技术隔离，使业务逻辑不依赖任何框架或基础设施。"
-license: MIT
 ---
 
 # 六边形架构 (Hexagonal Architecture)

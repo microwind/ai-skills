@@ -1,7 +1,6 @@
 ---
 name: 事件溯源
 description: "将状态变更存储为不可变的事件序列，通过重播事件重建状态，提供完整的审计追踪。"
-license: MIT
 ---
 
 # 事件溯源 (Event Sourcing)

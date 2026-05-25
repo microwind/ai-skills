@@ -1,7 +1,6 @@
 ---
 name: 清洁架构
 description: "通过依赖规则将系统分为同心圆层次，内层不依赖外层，实现业务逻辑与技术细节的完全分离。"
-license: MIT
 ---
 
 # 清洁架构 (Clean Architecture)
@@ -18,10 +17,10 @@ license: MIT
 │  │  Interface Adapters              │    │
 │  │  控制器、Gateway、Presenter       │    │
 │  │  ┌─────────────────────────┐    │    │
-│  │  │  Application (Use Cases) │    │    │
+│  │  │  Application (Use Cases) │    │   │
 │  │  │  应用业务规则             │    │    │
 │  │  │  ┌─────────────────┐    │    │    │
-│  │  │  │  Entities        │    │    │    │
+│  │  │  │  Entities        │    │    │   │
 │  │  │  │  企业业务规则     │    │    │    │
 │  │  │  └─────────────────┘    │    │    │
 │  │  └─────────────────────────┘    │    │

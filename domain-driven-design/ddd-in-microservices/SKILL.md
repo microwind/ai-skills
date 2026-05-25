@@ -1,7 +1,6 @@
 ---
 name: 微服务中的DDD
 description: "将DDD战略设计应用于微服务架构，限界上下文指导服务拆分，领域事件实现服务间通信。"
-license: MIT
 ---
 
 # 微服务中的 DDD (DDD in Microservices)
