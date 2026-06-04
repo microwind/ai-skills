@@ -4,16 +4,7 @@
 
 ## 提示词框架使用说明
 
-本指南中的提示词示例使用了 **BROKE、CRISPE、ROBOTIC** 等框架，这些框架有助于结构化提示词，但**并非必须**。
-
-**框架选择原则**：
-- **CRISPE**（Context-Role-Instructions-Steps-Preferences-Example）：适合需要明确步骤和偏好的场景（选型、方案设计、测试）
-- **BROKE**（Background-Role-Objective-Key Information-Example）：适合需要背景、角色、目标、关键信息的场景（风险评估、问题诊断、澄清）
-- **ROBOTIC**（Role-Objective-Background-Output format-Tone-Instructions-Constraints）：适合需要明确输出格式、语气、约束的场景（代码生成、配置、文档）
-- **Chain-of-Thought / ICIO**（Instruction-Context-Input-Output）：适合需要逐步推理的场景
-- **Plan 模式**：适合复杂任务，先让 Claude 制定计划，再逐步执行和调整
-
-**重要**：框架是工具，不是约束。简单场景直接描述需求即可，不必强行套用框架。关键是**目标、上下文、约束**至少占两样。
+本指南中的提示词示例使用了 **BROKE、CRISPE、ROBOTIC** 等框架，这些框架有助于结构化提示词，可**按需使用**。
 
 ## 完整项目实战
 
