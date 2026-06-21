@@ -1,6 +1,6 @@
 ---
-name: 工厂模式
-description: "使用工厂创建对象而不指定具体类。通过定义创建接口，让子类决定实例化哪个类，实现对象创建与使用的解耦。"
+name: factory-pattern
+description: "Use when you need to create objects without specifying concrete classes — 根据运行时条件创建不同实现。Decouple object creation from usage via factory interface, abstract factory for product families, or registry for plugin systems."
 license: MIT
 ---
 
@@ -17,29 +17,9 @@ license: MIT
 
 ## 何时使用
 
-**始终使用:**
 - 对象创建逻辑复杂或需要多步骤初始化
-- 需要支持多个实现类的灵活切换
-- 创建决策取决于运行时条件或配置
-- 希望集中管理对象创建逻辑
-- 需要延迟对象创建时机
-
-**触发短语/场景:**
-- "如何根据条件创建不同类型的对象？"
-- "需要支持多个实现，但客户端不关心具体类"
-- "复杂的初始化逻辑，想集中管理"
-- "数据库驱动程序选择"
-- "日志系统实现选择" → FileLogger, ConsoleLogger, RemoteLogger
-- "UI 组件工厂" → 按平台创建 Button
-- "支付方式工厂" → 支付宝、微信、银行卡
-
-**常见应用:**
-| 场景 | 工厂 | 产品 |
-|------|------|------|
-| 数据库连接 | DBConnectionFactory | MySQL, PostgreSQL, SQLite |
-| 消息队列 | MessageQueueFactory | RabbitMQ, Kafka, ActiveMQ |
-| 文件处理 | DocumentFactory | PDF, Word, Excel |
-| 支付处理 | PaymentFactory | Alipay, WeChat, Stripe |
+- 需要根据运行时条件/配置灵活切换实现类
+- 希望集中管理对象创建逻辑，解耦创建与使用
 
 ## 工厂模式的三种形式
 
@@ -398,14 +378,24 @@ class LoggerFactory(ABC):
     def create_logger(self) -> Logger:
         pass
 
-## 性能对比与选择指南
+class FileLoggerFactory(LoggerFactory):
+    def create_logger(self) -> Logger:
+        return FileLogger()
 
-| 方法 | 代码复杂度 | 扩展性 | 灵活性 | 推荐场景 | 性能 |
-|------|----------|-------|--------|--------|------|
-| **简单工厂** | 低 | 低 | 低 | 类型少且稳定 | ⭐⭐⭐⭐⭐ |
-| **工厂方法** | 中 | 高 | 中 | 类型多、需扩展 | ⭐⭐⭐⭐ |
-| **抽象工厂** | 高 | 极高 | 高 | 产品族、跨平台 | ⭐⭐⭐⭐ |
-| **参数化工厂** | 中 | 高 | 极高 | 类型动态、配置化 | ⭐⭐⭐ |
+# 使用
+factory: LoggerFactory = FileLoggerFactory()
+logger = factory.create_logger()
+logger.log("Application started")
+```
+
+## 选择指南
+
+| 方法 | 复杂度 | 扩展性 | 推荐场景 |
+|------|--------|--------|----------|
+| **简单工厂** | 低 | 低 | 类型少且稳定 |
+| **工厂方法** | 中 | 高 | 类型多、需扩展 |
+| **抽象工厂** | 高 | 极高 | 产品族、跨平台 |
+| **参数化工厂** | 中 | 极高 | 插件系统、配置驱动 |
 
 ---
 
